@@ -28,7 +28,7 @@
             headerTag: { display: "inline-block", fontSize: 10, letterSpacing: 3, color: C.pink, border: `1px solid ${C.pink}`, padding: "4px 12px", borderRadius: 20, marginBottom: 12, textTransform: "uppercase" },
             h1: { fontSize: "28px", fontWeight: 900, marginBottom: 20, textAlign: "center", background: `linear-gradient(135deg,#fff 0%,${C.pink} 60%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
             section: { background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20, marginBottom: 16 },
-            sectionTitle: { fontSize: 13, fontWeight: 700, color: C.pink, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 },
+            sectionTitle: { fontSize: 13, fontWeight: 700, color: C.pink, marginBottom: 14 },
             input: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, color: C.text, fontSize: 16, padding: "12px", outline: "none", width: "100%", boxSizing: "border-box", marginBottom: 10 },
             btn: { width: "100%", background: `linear-gradient(135deg,${C.pink},${C.purple})`, border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 700, padding: 16, marginTop: 8 },
             statusBox: (bg) => ({ padding: "16px", borderRadius: 12, background: bg, textAlign: "center", marginBottom: 20, border: `1px solid rgba(255,255,255,0.1)` }),
@@ -43,8 +43,10 @@
 
             const analyze = () => {
                 const p = parseFloat(price);
-                const c = parseFloat(cost);
-                if (!p || !c) return;
+                // 如果沒輸入成本，就以現價當作基準成本
+                const c = cost ? parseFloat(cost) : p;
+                
+                if (!p) return;
 
                 const levels = {
                     start: (c * 1.04),
@@ -55,6 +57,7 @@
 
                 let status = { text: "等待觀察", advice: "尚未突破發動點，耐心等待", color: C.muted, bg: "#2a2f3e33" };
 
+                // 邏輯判定
                 if (p >= levels.peak) {
                     status = { text: "🚫 終極韭菜區", advice: "絕對不可進場，風險極高！", color: C.red, bg: `${C.red}22` };
                 } else if (p >= levels.target) {
@@ -65,7 +68,7 @@
                     status = { text: "🌱 初試啼聲", advice: "剛過發動點，適合分批佈局", color: C.blue, bg: `${C.blue}22` };
                 }
 
-                setResult({ p, c, levels, status });
+                setResult({ p, c, levels, status, isCostManual: !!cost });
             };
 
             return (
@@ -77,31 +80,35 @@
 
                     <div style={s.section}>
                         <div style={s.sectionTitle}>📊 核心數據輸入</div>
-                        <input style={s.input} placeholder="股票名稱 / 代號" value={name} onChange={e => setName(e.target.value)} />
-                        <input style={s.input} type="number" placeholder="當前現價" value={price} onChange={e => setPrice(e.target.value)} />
-                        <input style={s.input} type="number" placeholder="主力核心成本" value={cost} onChange={e => setCost(e.target.value)} />
-                        <button style={s.btn} onClick={analyze}>自動判定進場時機</button>
+                        <input style={s.input} placeholder="股票名稱 / 代號 (選填)" value={name} onChange={e => setName(e.target.value)} />
+                        <input style={s.input} type="number" placeholder="當前現價 (必填)" value={price} onChange={e => setPrice(e.target.value)} />
+                        <input style={s.input} type="number" placeholder="主力成本 (沒填則以現價計算)" value={cost} onChange={e => setCost(e.target.value)} />
+                        <button style={s.btn} onClick={analyze}>開始發財分析</button>
                     </div>
 
                     {result && (
                         <div style={s.section}>
                             <div style={s.statusBox(result.status.bg)}>
-                                <div style={{fontSize: 14, color: C.dim, marginBottom: 4}}>{name || "該股"} 目前時機</div>
+                                <div style={{fontSize: 12, color: C.dim, marginBottom: 4}}>
+                                    {result.isCostManual ? "依手動成本計算" : "依當前現價推算"}
+                                </div>
                                 <div style={{fontSize: 24, fontWeight: 900, color: result.status.color, marginBottom: 8}}>{result.status.text}</div>
                                 <div style={{fontSize: 13, color: C.text, opacity: 0.8}}>{result.status.advice}</div>
                             </div>
 
-                            <div style={{color: C.pink, fontSize: 13, fontWeight: 700, marginBottom: 10}}>一路發波浪軌跡</div>
+                            <div style={{color: C.pink, fontSize: 13, fontWeight: 700, marginBottom: 10}}>
+                                基準成本：${result.c.toFixed(2)}
+                            </div>
                             {[
                                 { l: "突破發動點", v: result.levels.start, m: "1.04x" },
-                                { l: "第一波休息", v: result.levels.rest, m: "1.20x" },
-                                { l: "第二波高點", v: result.levels.target, m: "1.40x" },
+                                { l: "一路發休息區", v: result.levels.rest, m: "1.20x" },
+                                { l: "財富自由區", v: result.levels.target, m: "1.40x" },
                                 { l: "終極韭菜區", v: result.levels.peak, m: "1.70x" }
                             ].map(lv => (
                                 <div key={lv.l} style={{display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: `1px solid ${C.border}`}}>
-                                    <span style={{fontSize: 13, color: C.dim}}>{lv.l} <small>{lv.m}</small></span>
+                                    <span style={{fontSize: 13, color: C.dim}}>{lv.l}</span>
                                     <span style={{fontSize: 15, fontWeight: 700, color: result.p >= lv.v ? C.green : C.text}}>${lv.v.toFixed(2)}</span>
-                                    <span style={s.badge(result.p >= lv.v)}>{result.p >= lv.v ? "已通過" : "未達標"}</span>
+                                    <span style={s.badge(result.p >= lv.v)}>{result.p >= lv.v ? "已通過" : "待挑戰"}</span>
                                 </div>
                             ))}
                         </div>
