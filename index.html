@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>💰 發財一路發 (自動數據版)</title>
+    <title>💰 發財一路發 (穩定修復版)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        body { margin: 0; background: #0d0f14; font-family: -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; color: #6b7280; font-weight: 700; cursor: pointer; border-radius: 8px; }
-        .tab-btn.active { background: #1c2030; color: #ff6b9d; box-shadow: 0 4px 15px rgba(255,107,157,0.2); }
-        .fetch-btn { background: #2a2f3e; color: #fff; border: 1px solid #4b5563; padding: 8px 12px; borderRadius: 8px; font-size: 13px; cursor: pointer; margin-bottom: 12px; width: 100%; }
-        .loading { color: #fbbf24; font-size: 12px; margin-bottom: 10px; text-align: center; }
+        body { margin: 0; background: #0d0f14; font-family: -apple-system, system-ui, sans-serif; color: #e8eaf0; }
+        .container { min-height: 100vh; padding: 20px; box-sizing: border-box; }
+        .card { background: #1c2030; border: 1px solid #2a2f3e; borderRadius: 16px; padding: 20px; margin-bottom: 15px; }
+        input { width: 100%; background: #161921; border: 1px solid #2a2f3e; borderRadius: 10px; padding: 12px; color: #fff; margin-bottom: 10px; boxSizing: border-box; outline: none; font-size: 16px; }
+        .fetch-btn { width: 100%; background: linear-gradient(135deg, #6366f1, #a855f7); border: none; borderRadius: 12px; color: #fff; padding: 14px; font-weight: 700; cursor: pointer; margin-bottom: 15px; }
+        .fetch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; color: #6b7280; font-weight: 700; cursor: pointer; }
+        .tab-btn.active { background: #1c2030; color: #ff6b9d; borderRadius: 8px; }
     </style>
 </head>
 <body>
@@ -21,132 +23,108 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const C = {
-            bg: "#0d0f14", surface: "#161921", card: "#1c2030", border: "#2a2f3e",
-            pink: "#ff6b9d", green: "#4ade80", red: "#f87171", yellow: "#fbbf24",
-            blue: "#60a5fa", gold: "#ffd700", text: "#e8eaf0", dim: "#9ca3af",
-        };
-
-        const s = {
-            wrap: { background: C.bg, minHeight: "100vh", padding: "24px 16px 80px", color: C.text },
-            h1: { fontSize: "28px", fontWeight: 900, marginBottom: 20, textAlign: "center", background: `linear-gradient(135deg,#fff 0%,${C.pink} 60%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
-            tabs: { display: "flex", background: C.surface, padding: "4px", borderRadius: 12, marginBottom: 20, border: `1px solid ${C.border}` },
-            section: { background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20, marginBottom: 16 },
-            input: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, color: C.text, fontSize: 17, padding: "14px", outline: "none", width: "100%", boxSizing: "border-box", marginBottom: 12, fontWeight: "700" }
-        };
-
         function App() {
             const [mode, setMode] = useState("strong");
-            const [name, setName] = useState("");
+            const [symbol, setSymbol] = useState("");
             const [price, setPrice] = useState("");
-            const [cost, setCost] = useState("");
             const [high, setHigh] = useState("");
             const [low, setLow] = useState("");
             const [loading, setLoading] = useState(false);
-            const [result, setResult] = useState(null);
 
-            // 自動抓取數據功能
-            const fetchStockData = async () => {
-                if (!name || name.length < 4) { alert("請先輸入 4 位數股票代號"); return; }
+            const autoFetch = async () => {
+                if (!symbol || symbol.length < 4) { alert("請輸入 4 位數代碼"); return; }
                 setLoading(true);
                 try {
-                    // 使用 FinMind API 抓取數據
-                    const res = await fetch(`https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${name}&start_date=${new Date(Date.now() - 86400000 * 30).toISOString().split('T')[0]}`);
+                    const start = new Date(Date.now() - 40 * 86400000).toISOString().split('T')[0];
+                    const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${symbol}&start_date=${start}`;
+                    
+                    const res = await fetch(url);
                     const json = await res.json();
+                    
                     if (json.data && json.data.length > 0) {
-                        const latest = json.data[json.data.length - 1];
-                        const last30 = json.data;
-                        const periodHigh = Math.max(...last30.map(d => d.high));
-                        const periodLow = Math.min(...last30.map(d => d.low));
+                        const d = json.data;
+                        const latest = d[d.length - 1];
+                        const h = Math.max(...d.map(x => x.high));
+                        const l = Math.min(...d.map(x => x.low));
 
-                        setPrice(latest.close);
-                        setHigh(periodHigh);
-                        setLow(periodLow);
-                        alert(`成功抓取！現價: ${latest.close}, 近月高點: ${periodHigh}, 近月低點: ${periodLow}`);
+                        setPrice(latest.close.toString());
+                        setHigh(h.toString());
+                        setLow(l.toString());
                     } else {
-                        alert("查無此代號，請檢查輸入是否正確。");
+                        alert("查無數據，請確認代號是否正確（例如 2330）");
                     }
-                } catch (err) {
-                    alert("數據抓取失敗，請稍後再試。");
+                } catch (e) {
+                    alert("網路連線錯誤，請稍後再試");
                 }
                 setLoading(false);
             };
 
-            useEffect(() => {
+            const renderResults = () => {
                 const p = parseFloat(price);
-                if (!p || isNaN(p)) { setResult(null); return; }
+                if (!p) return <div style={{textAlign:'center', color:'#9ca3af', marginTop:20}}>請輸入數據或點擊抓取</div>;
 
                 if (mode === "strong") {
-                    const base = cost ? parseFloat(cost) : p;
-                    const lv = { start: base * 1.04, rest: base * 1.2, target: base * 1.4, peak: base * 1.7 };
-                    let st = { text: "等待觀察", advice: "尚未突破發動點", color: C.dim, bg: "#2a2f3e33" };
-                    if (p >= lv.peak) st = { text: "🚫 終極韭菜區", advice: "風險極高", color: C.red, bg: `${C.red}22` };
-                    else if (p >= lv.target) st = { text: "⚡ 末升段挑戰", advice: "注意回檔", color: C.yellow, bg: `${C.yellow}22` };
-                    else if (p >= lv.rest) st = { text: "🚀 主升段進行中", advice: "動能強勁", color: C.green, bg: `${C.green}22` };
-                    else if (p >= lv.start) st = { text: "🌱 初試啼聲", advice: "剛過發動點", color: C.blue, bg: `${C.blue}22` };
-                    setResult({ base, lv, st });
+                    const start = p * 1.04;
+                    const target = p * 1.4;
+                    return (
+                        <div className="card">
+                            <div style={{display:'flex', justifyContent:'space-between', marginBottom:15}}>
+                                <span>🚀 發動點 (1.04x)</span>
+                                <span style={{color:'#60a5fa', fontWeight:700}}>${start.toFixed(2)}</span>
+                            </div>
+                            <div style={{display:'flex', justifyContent:'space-between'}}>
+                                <span>🎯 目標區 (1.40x)</span>
+                                <span style={{color:'#4ade80', fontWeight:700}}>${target.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    );
                 } else {
                     const h = parseFloat(high), l = parseFloat(low);
-                    if (!h || !l) { setResult(null); return; }
-                    const d = h - l;
-                    setResult({ fibs: [
-                        { l: "壓力區 (1.382)", v: l + d * 1.382, c: C.red },
-                        { l: "目標區 (1.618)", v: l + d * 1.618, c: C.pink },
-                        { l: "黃金分割 (0.618)", v: l + d * 0.618, c: C.gold },
-                        { l: "中軸支撐 (0.500)", v: l + d * 0.5, c: C.blue },
-                        { l: "強勢支撐 (0.382)", v: l + d * 0.382, c: C.green }
-                    ]});
+                    if (!h || !l) return null;
+                    const diff = h - l;
+                    const fibs = [
+                        { n: "目標 (1.618)", v: l + diff * 1.618, c: "#ff6b9d" },
+                        { n: "壓力 (0.618)", v: l + diff * 0.618, c: "#ffd700" },
+                        { n: "支撐 (0.382)", v: l + diff * 0.382, c: "#4ade80" }
+                    ];
+                    return (
+                        <div className="card">
+                            {fibs.map(f => (
+                                <div key={f.n} style={{display:'flex', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid #2a2f3e'}}>
+                                    <span style={{color:'#9ca3af'}}>{f.n}</span>
+                                    <span style={{color:f.c, fontWeight:700}}>${f.v.toFixed(2)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    );
                 }
-            }, [mode, price, cost, high, low]);
+            };
 
             return (
-                <div style={s.wrap}>
-                    <div style={s.h1}>發財全功能 (自動版)</div>
+                <div className="container">
+                    <h2 style={{textAlign:'center', marginBottom:20}}>💰 發財全功能</h2>
                     
-                    <div style={s.tabs}>
-                        <button className={`tab-btn ${mode === 'strong' ? 'active' : ''}`} onClick={() => setMode('strong')}>🐰 強勢股</button>
-                        <button className={`tab-btn ${mode === 'fibo' ? 'active' : ''}`} onClick={() => setMode('fibo')}>📊 費波那契</button>
+                    <div style={{display:'flex', background:'#161921', padding:4, borderRadius:12, marginBottom:15}}>
+                        <button className={`tab-btn ${mode==='strong'?'active':''}`} onClick={()=>setMode('strong')}>強勢股</button>
+                        <button className={`tab-btn ${mode==='fibo'?'active':''}`} onClick={()=>setMode('fibo')}>費波那契</button>
                     </div>
 
-                    <div style={s.section}>
-                        <input style={s.input} type="text" placeholder="股票代號 (例: 2330)" value={name} onChange={e => setName(e.target.value)} />
-                        <button className="fetch-btn" onClick={fetchStockData} disabled={loading}>
-                            {loading ? "數據抓取中..." : "🔍 點我自動抓取即時數據"}
+                    <div className="card">
+                        <input placeholder="股票代號 (例: 3481)" value={symbol} onChange={e=>setSymbol(e.target.value)} />
+                        <button className="fetch-btn" onClick={autoFetch} disabled={loading}>
+                            {loading ? "讀取中..." : "🔍 一鍵抓取波段數據"}
                         </button>
-                        
-                        <input style={s.input} type="number" placeholder="當前現價" value={price} onChange={e => setPrice(e.target.value)} />
-                        {mode === 'strong' ? (
-                            <input style={s.input} type="number" placeholder="主力成本 (選填)" value={cost} onChange={e => setCost(e.target.value)} />
-                        ) : (
-                            <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px"}}>
-                                <input style={s.input} type="number" placeholder="高點" value={high} onChange={e => setHigh(e.target.value)} />
-                                <input style={s.input} type="number" placeholder="低點" value={low} onChange={e => setLow(e.target.value)} />
+                        <div style={{fontSize:12, color:'#ff6b9d', marginBottom:8}}>手動微調</div>
+                        <input type="number" placeholder="現價" value={price} onChange={e=>setPrice(e.target.value)} />
+                        {mode === 'fibo' && (
+                            <div style={{display:'flex', gap:10}}>
+                                <input type="number" placeholder="高點" value={high} onChange={e=>setHigh(e.target.value)} />
+                                <input type="number" placeholder="低點" value={low} onChange={e=>setLow(e.target.value)} />
                             </div>
                         )}
                     </div>
 
-                    {result && mode === 'strong' && (
-                        <div style={s.section}>
-                            <div style={s.statusBox(result.st.bg)}>
-                                <div style={{fontSize: 24, fontWeight: 900, color: result.st.color}}>{result.st.text}</div>
-                                <div style={{fontSize: 13, opacity: 0.8}}>{result.st.advice}</div>
-                            </div>
-                            {[{t:"發動點",v:result.lv.start},{t:"目標區",v:result.lv.target}].map(i => (
-                                <div key={i.t} style={{display:"flex",justifyContent:"space-between",padding:"14px 0"}}>
-                                    <span>{i.t}</span><span style={{fontWeight:700}}>${i.v.toFixed(2)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                    {result && mode === 'fibo' && (
-                        <div style={s.section}>
-                            {result.fibs.map(f => (
-                                <div key={f.l} style={{display:"flex",justifyContent:"space-between",padding:"14px 0",borderBottom:`1px solid ${C.border}`}}>
-                                    <span style={{color:C.dim}}>{f.l}</span><span style={{fontWeight:900, color: f.c}}>${f.v.toFixed(2)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    {renderResults()}
                 </div>
             );
         }
