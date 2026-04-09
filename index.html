@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>💰 發財一路發 (全功能整合版)</title>
+    <title>💰 發財一路發 (穩定自動版)</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        body { margin: 0; background: #0d0f14; font-family: -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+        body { margin: 0; background: #0d0f14; font-family: -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #e8eaf0; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; color: #6b7280; font-weight: 700; cursor: pointer; transition: 0.3s; border-radius: 8px; }
         .tab-btn.active { background: #1c2030; color: #ff6b9d; box-shadow: 0 4px 15px rgba(255,107,157,0.2); }
+        .fetch-btn { width: 100%; background: linear-gradient(135deg, #ff6b9d, #a855f7); border: none; border-radius: 12px; color: #fff; padding: 14px; font-weight: 800; cursor: pointer; margin-bottom: 15px; transition: 0.2s; }
+        .fetch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -25,42 +27,60 @@
             blue: "#60a5fa", gold: "#ffd700", text: "#e8eaf0", dim: "#9ca3af",
         };
 
-        const s = {
-            wrap: { background: C.bg, minHeight: "100vh", padding: "24px 16px 80px", color: C.text },
-            headerTag: { display: "inline-block", fontSize: 10, letterSpacing: 3, color: C.pink, border: `1px solid ${C.pink}`, padding: "4px 12px", borderRadius: 20, marginBottom: 12, textTransform: "uppercase" },
-            h1: { fontSize: "28px", fontWeight: 900, marginBottom: 20, textAlign: "center", background: `linear-gradient(135deg,#fff 0%,${C.pink} 60%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
-            tabs: { display: "flex", background: C.surface, padding: "4px", borderRadius: 12, marginBottom: 20, border: `1px solid ${C.border}` },
-            section: { background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20, marginBottom: 16 },
-            input: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, color: C.text, fontSize: 17, padding: "14px", outline: "none", width: "100%", boxSizing: "border-box", marginBottom: 12, fontWeight: "700" },
-            statusBox: (bg) => ({ padding: "16px", borderRadius: 12, background: bg, textAlign: "center", marginBottom: 20, border: `1px solid rgba(255,255,255,0.1)` }),
-            badge: (active) => ({ display: "inline-flex", fontSize: 11, padding: "2px 8px", borderRadius: 4, background: active ? `${C.green}22` : `${C.muted}11`, color: active ? C.green : C.muted, border: `1px solid ${active ? C.green : C.muted}44` })
-        };
-
         function App() {
-            const [mode, setMode] = useState("strong"); // strong 或 fibo
-            const [name, setName] = useState("");
+            const [mode, setMode] = useState("strong");
+            const [symbol, setSymbol] = useState("");
             const [price, setPrice] = useState("");
             const [cost, setCost] = useState("");
             const [high, setHigh] = useState("");
             const [low, setLow] = useState("");
-            const [result, setResult] = useState(null);
+            const [loading, setLoading] = useState(false);
 
-            useEffect(() => {
+            // 自動抓取近一個月高低點
+            const autoFetch = async () => {
+                if (!symbol || symbol.length < 4) { alert("請輸入 4 位數台股代號"); return; }
+                setLoading(true);
+                try {
+                    const start = new Date(Date.now() - 35 * 86400000).toISOString().split('T')[0];
+                    const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${symbol}&start_date=${start}`;
+                    const res = await fetch(url);
+                    const json = await res.json();
+                    
+                    if (json.data && json.data.length > 0) {
+                        const d = json.data;
+                        const latest = d[d.length - 1];
+                        const h = Math.max(...d.map(x => x.high));
+                        const l = Math.min(...d.map(x => x.low));
+
+                        setPrice(String(latest.close));
+                        setHigh(String(h));
+                        setLow(String(l));
+                    } else { alert("查無數據，請確認代號正確"); }
+                } catch (e) { alert("連線失敗"); }
+                setLoading(false);
+            };
+
+            const renderResults = () => {
                 const p = parseFloat(price);
-                if (!p || isNaN(p)) { setResult(null); return; }
+                if (isNaN(p)) return <div style={{textAlign:'center', color:C.dim, marginTop:20}}>請輸入代號並抓取數據</div>;
 
                 if (mode === "strong") {
                     const base = cost ? parseFloat(cost) : p;
                     const lv = { start: base * 1.04, rest: base * 1.2, target: base * 1.4, peak: base * 1.7 };
-                    let st = { text: "等待觀察", advice: "尚未突破發動點", color: C.dim, bg: "#2a2f3e33" };
-                    if (p >= lv.peak) st = { text: "🚫 終極韭菜區", advice: "風險極高，嚴禁追高", color: C.red, bg: `${C.red}22` };
-                    else if (p >= lv.target) st = { text: "⚡ 末升段挑戰", advice: "注意回檔風險", color: C.yellow, bg: `${C.yellow}22` };
-                    else if (p >= lv.rest) st = { text: "🚀 主升段進行中", advice: "動能強勁，持股續抱", color: C.green, bg: `${C.green}22` };
-                    else if (p >= lv.start) st = { text: "🌱 初試啼聲", advice: "剛過發動點，適合佈局", color: C.blue, bg: `${C.blue}22` };
-                    setResult({ base, lv, st, isAuto: !cost });
+                    return (
+                        <div style={{background: C.card, padding: 20, borderRadius: 16, border: `1px solid ${C.border}`}}>
+                            <div style={{fontSize: 12, color: C.dim, marginBottom: 10}}>基準成本: ${base.toFixed(2)}</div>
+                            {[{t:"發動點",v:lv.start,c:C.blue},{t:"休息區",v:lv.rest,c:C.yellow},{t:"目標區",v:lv.target,c:C.green},{t:"韭菜區",v:lv.peak,c:C.red}].map(i => (
+                                <div key={i.t} style={{display:"flex",justifyContent:"space-between",padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+                                    <span style={{color:C.dim}}>{i.t}</span>
+                                    <span style={{fontWeight:700, color: i.c}}>${i.v.toFixed(2)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    );
                 } else {
                     const h = parseFloat(high), l = parseFloat(low);
-                    if (!h || !l) { setResult(null); return; }
+                    if (isNaN(h) || isNaN(l)) return null;
                     const d = h - l;
                     const fibs = [
                         { l: "壓力區 (1.382)", v: l + d * 1.382, c: C.red },
@@ -69,64 +89,61 @@
                         { l: "中軸支撐 (0.500)", v: l + d * 0.5, c: C.blue },
                         { l: "強勢支撐 (0.382)", v: l + d * 0.382, c: C.green }
                     ];
-                    setResult({ fibs });
+                    return (
+                        <div style={{background: C.card, padding: 20, borderRadius: 16, border: `1px solid ${C.border}`}}>
+                            {fibs.map(f => (
+                                <div key={f.l} style={{display:"flex",justifyContent:"space-between",padding:"12px 0",borderBottom:`1px solid ${C.border}`}}>
+                                    <span style={{color:C.dim}}>{f.l}</span>
+                                    <span style={{fontWeight:900, color: f.c}}>${f.v.toFixed(2)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    );
                 }
-            }, [mode, price, cost, high, low]);
+            };
 
             return (
-                <div style={s.wrap}>
-                    <div style={{textAlign: "center"}}>
-                        <div style={s.headerTag}>168 Finance Lab</div>
-                        <div style={s.h1}>發財全功能精算機</div>
+                <div style={{ background: C.bg, minHeight: "100vh", padding: "24px 16px" }}>
+                    <div style={{textAlign: "center", marginBottom: 20}}>
+                        <div style={{fontSize: 10, color: C.pink, letterSpacing: 3}}>168 FINANCE LAB</div>
+                        <h1 style={{margin: "10px 0", fontSize: 28}}>發財整合精算機</h1>
                     </div>
 
-                    <div style={s.tabs}>
-                        <button className={`tab-btn ${mode === 'strong' ? 'active' : ''}`} onClick={() => setMode('strong')}>🐰 強勢股估算</button>
+                    <div style={{display: "flex", background: C.surface, padding: "4px", borderRadius: 12, marginBottom: 20}}>
+                        <button className={`tab-btn ${mode === 'strong' ? 'active' : ''}`} onClick={() => setMode('strong')}>🐰 強勢股</button>
                         <button className={`tab-btn ${mode === 'fibo' ? 'active' : ''}`} onClick={() => setMode('fibo')}>📊 費波那契</button>
                     </div>
 
-                    <div style={s.section}>
-                        <input style={s.input} type="text" placeholder="股票名稱 / 代號" value={name} onChange={e => setName(e.target.value)} />
-                        <input style={s.input} type="number" placeholder="當前現價" value={price} onChange={e => setPrice(e.target.value)} />
+                    <div style={{background: C.card, padding: 20, borderRadius: 16, border: `1px solid ${C.border}`, marginBottom: 16}}>
+                        <input style={{width:"100%", background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:14, color:"#fff", marginBottom:12, boxSizing:"border-box", fontSize:17}} 
+                               placeholder="輸入代號 (例: 3481)" value={symbol} onChange={e => setSymbol(e.target.value)} />
                         
-                        {mode === 'strong' ? (
-                            <input style={s.input} type="number" placeholder="主力成本 (沒填則依現價)" value={cost} onChange={e => setCost(e.target.value)} />
-                        ) : (
-                            <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px"}}>
-                                <input style={s.input} type="number" placeholder="波段高點" value={high} onChange={e => setHigh(e.target.value)} />
-                                <input style={s.input} type="number" placeholder="波段低點" value={low} onChange={e => setLow(e.target.value)} />
+                        <button className="fetch-btn" onClick={autoFetch} disabled={loading}>
+                            {loading ? "數據抓取中..." : "🔍 一鍵抓取波段高低點"}
+                        </button>
+
+                        <div style={{display:"flex", gap:10}}>
+                            <div style={{flex:1}}>
+                                <span style={{fontSize:11, color:C.dim}}>當前現價</span>
+                                <input style={{width:"100%", background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:12, color:"#fff", boxSizing:"border-box"}} 
+                                       type="number" value={price} onChange={e => setPrice(e.target.value)} />
                             </div>
-                        )}
+                            {mode === 'strong' ? (
+                                <div style={{flex:1}}>
+                                    <span style={{fontSize:11, color:C.dim}}>主力成本</span>
+                                    <input style={{width:"100%", background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:12, color:"#fff", boxSizing:"border-box"}} 
+                                           type="number" value={cost} onChange={e => setCost(e.target.value)} />
+                                </div>
+                            ) : (
+                                <>
+                                    <div style={{flex:1}}><span style={{fontSize:11, color:C.dim}}>高點</span><input style={{width:"100%", background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:12, color:"#fff", boxSizing:"border-box"}} type="number" value={high} onChange={e => setHigh(e.target.value)} /></div>
+                                    <div style={{flex:1}}><span style={{fontSize:11, color:C.dim}}>低點</span><input style={{width:"100%", background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:12, color:"#fff", boxSizing:"border-box"}} type="number" value={low} onChange={e => setLow(e.target.value)} /></div>
+                                </>
+                            )}
+                        </div>
                     </div>
 
-                    {result && mode === 'strong' && (
-                        <div style={s.section}>
-                            <div style={s.statusBox(result.st.bg)}>
-                                <div style={{fontSize: 12, color: C.dim, marginBottom: 4}}>{name || "該股"} (基準: ${result.base})</div>
-                                <div style={{fontSize: 24, fontWeight: 900, color: result.st.color, marginBottom: 8}}>{result.st.text}</div>
-                                <div style={{fontSize: 13, opacity: 0.8}}>{result.st.advice}</div>
-                            </div>
-                            {[{t:"發動點",v:result.lv.start},{t:"休息區",v:result.lv.rest},{t:"目標區",v:result.lv.target},{t:"韭菜區",v:result.lv.peak}].map(i => (
-                                <div key={i.t} style={{display:"flex",justifyContent:"space-between",padding:"14px 0",borderBottom:`1px solid ${C.border}`}}>
-                                    <span style={{color:C.dim}}>{i.t}</span>
-                                    <span style={{fontWeight:700, color: parseFloat(price)>=i.v?C.green:C.text}}>${i.v.toFixed(2)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {result && mode === 'fibo' && (
-                        <div style={s.section}>
-                            <div style={{color: C.gold, fontSize: 13, fontWeight: 700, marginBottom: 15}}>💎 費波那契關鍵位階</div>
-                            {result.fibs.map(f => (
-                                <div key={f.l} style={{display:"flex",justifyContent:"space-between",padding:"14px 0",borderBottom:`1px solid ${C.border}`}}>
-                                    <span style={{color:C.dim, fontSize: 14}}>{f.l}</span>
-                                    <span style={{fontWeight:900, color: f.c}}>${f.v.toFixed(2)}</span>
-                                    <span style={{fontSize: 11, color: parseFloat(price)>=f.v?C.green:C.dim}}>{parseFloat(price)>=f.v?"已站上":"未達"}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    {renderResults()}
                 </div>
             );
         }
