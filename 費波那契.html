@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>💰 發財一路發 (Fibonacci Pro)</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { margin: 0; background: #0d0f14; font-family: -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const C = {
+            bg: "#0d0f14", surface: "#161921", card: "#1c2030", border: "#2a2f3e",
+            pink: "#ff6b9d", green: "#4ade80", red: "#f87171", yellow: "#fbbf24",
+            blue: "#60a5fa", purple: "#a78bfa", gold: "#ffd700", text: "#e8eaf0", dim: "#9ca3af",
+        };
+
+        const s = {
+            wrap: { background: C.bg, minHeight: "100vh", padding: "24px 16px 80px", color: C.text },
+            headerTag: { display: "inline-block", fontSize: 10, letterSpacing: 3, color: C.gold, border: `1px solid ${C.gold}`, padding: "4px 12px", borderRadius: 20, marginBottom: 12 },
+            h1: { fontSize: "28px", fontWeight: 900, marginBottom: 20, textAlign: "center", background: `linear-gradient(135deg,#fff 0%,${C.gold} 60%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
+            section: { background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20, marginBottom: 16 },
+            input: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, color: C.text, fontSize: 18, padding: "14px", outline: "none", width: "100%", boxSizing: "border-box", marginBottom: 12, fontWeight: "700" },
+            label: { fontSize: 13, color: C.gold, fontWeight: 700, marginBottom: 10, display: "block" },
+            grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "15px" }
+        };
+
+        function App() {
+            const [high, setHigh] = useState("");
+            const [low, setLow] = useState("");
+            const [price, setPrice] = useState("");
+            const [res, setRes] = useState(null);
+
+            useEffect(() => {
+                const h = parseFloat(high);
+                const l = parseFloat(low);
+                const p = parseFloat(price);
+
+                if (!h || !l || isNaN(h) || isNaN(l)) {
+                    setRes(null);
+                    return;
+                }
+
+                const diff = h - l;
+                const fibs = [
+                    { label: "壓力區 (1.382)", v: l + diff * 1.382, color: C.red },
+                    { label: "目標區 (1.618)", v: l + diff * 1.618, color: C.pink },
+                    { label: "黃金分割 (0.618)", v: l + diff * 0.618, color: C.gold },
+                    { label: "中軸支撐 (0.500)", v: l + diff * 0.5, color: C.blue },
+                    { label: "強勢支撐 (0.382)", v: l + diff * 0.382, color: C.green }
+                ];
+
+                setRes({ p, fibs });
+            }, [high, low, price]);
+
+            return (
+                <div style={s.wrap}>
+                    <div style={{textAlign: "center"}}>
+                        <div style={s.headerTag}>FIBONACCI EXPERT</div>
+                        <div style={s.h1}>發財黃金分割計數器</div>
+                    </div>
+
+                    <div style={s.section}>
+                        <span style={s.label}>📉 輸入波段高低點</span>
+                        <div style={s.grid}>
+                            <input style={s.input} type="number" placeholder="波段高點" value={high} onChange={e => setHigh(e.target.value)} />
+                            <input style={s.input} type="number" placeholder="波段低點" value={low} onChange={e => setLow(e.target.value)} />
+                        </div>
+                        <span style={s.label}>🔍 當前現價 (比對位階)</span>
+                        <input style={s.input} type="number" placeholder="當前現價" value={price} onChange={e => setPrice(e.target.value)} />
+                    </div>
+
+                    {res && (
+                        <div style={s.section}>
+                            <span style={s.label}>💎 費波那契關鍵位階</span>
+                            {res.fibs.map(f => (
+                                <div key={f.label} style={{display: "flex", justifyContent: "space-between", padding: "14px 0", borderBottom: `1px solid ${C.border}`}}>
+                                    <span style={{fontSize: 14, color: C.dim}}>{f.label}</span>
+                                    <span style={{fontSize: 16, fontWeight: 900, color: f.color}}>${f.v.toFixed(2)}</span>
+                                    {res.p && (
+                                        <span style={{fontSize: 11, color: res.p >= f.v ? C.green : C.dim}}>
+                                            {res.p >= f.v ? "● 已站上" : "○ 未達"}
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
+</body>
+</html>
