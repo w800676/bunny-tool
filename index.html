@@ -15,7 +15,7 @@
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useCallback } = React;
+        const { useState } = React;
 
         const C = {
             bg: "#0d0f14", surface: "#161921", card: "#1c2030", border: "#2a2f3e",
@@ -30,54 +30,42 @@
             section: { background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20, marginBottom: 16 },
             sectionTitle: { fontSize: 13, fontWeight: 700, color: C.pink, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 },
             input: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, color: C.text, fontSize: 16, padding: "12px", outline: "none", width: "100%", boxSizing: "border-box", marginBottom: 10 },
-            btn: { width: "100%", background: `linear-gradient(135deg,${C.pink},${C.purple})`, border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 700, padding: 16, marginTop: 8, boxShadow: `0 4px 15px ${C.pink}33` },
-            badge: (type) => ({ display: "inline-flex", fontSize: 11, padding: "2px 8px", borderRadius: 4, background: type === "pass" ? `${C.green}22` : `${C.red}22`, color: type === "pass" ? C.green : C.red, border: `1px solid ${type === "pass" ? C.green : C.red}44` }),
-            matrixGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }
+            btn: { width: "100%", background: `linear-gradient(135deg,${C.pink},${C.purple})`, border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 700, padding: 16, marginTop: 8 },
+            statusBox: (bg) => ({ padding: "16px", borderRadius: 12, background: bg, textAlign: "center", marginBottom: 20, border: `1px solid rgba(255,255,255,0.1)` }),
+            badge: (active) => ({ display: "inline-flex", fontSize: 11, padding: "2px 8px", borderRadius: 4, background: active ? `${C.green}22` : `${C.muted}11`, color: active ? C.green : C.muted, border: `1px solid ${active ? C.green : C.muted}44` })
         };
-
-        function RadioBtn({ label, value, selected, color, onClick }) {
-            const active = selected === value;
-            return (
-                <div onClick={onClick} style={{ flex: 1, textAlign: "center", background: active ? `${color}18` : C.surface, border: `1px solid ${active ? color : C.border}`, borderRadius: 10, padding: "12px 8px", cursor: "pointer", fontSize: 13, color: active ? color : C.dim, fontWeight: active ? 700 : 400 }}>
-                    {label}
-                </div>
-            );
-        }
-
-        function WaveTable({ cost, price, label, color }) {
-            const levels = [
-                { l: "突破發動點", m: "1.04x", v: (cost * 1.04).toFixed(2) },
-                { l: "一路發高點區", m: "1.20x", v: (cost * 1.2).toFixed(2) },
-                { l: "財富自由區", m: "1.40x", v: (cost * 1.4).toFixed(2) },
-                { l: "終極韭菜區", m: "1.70x", v: (cost * 1.7).toFixed(2) },
-            ];
-            return (
-                <div style={{marginTop: 15}}>
-                    <div style={{color, fontSize: 13, fontWeight: 700, marginBottom: 10}}>{label}成本一路發波浪軌跡</div>
-                    {levels.map(lv => (
-                        <div key={lv.l} style={{display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}`}}>
-                            <span style={{fontSize: 13, color: C.dim}}>{lv.l} <small>{lv.m}</small></span>
-                            <span style={{fontSize: 15, fontWeight: 700, color: price >= lv.v ? C.green : C.text}}>${lv.v}</span>
-                            <span style={s.badge(price >= lv.v ? "pass" : "fail")}>{price >= lv.v ? "已達" : "未達"}</span>
-                        </div>
-                    ))}
-                </div>
-            );
-        }
 
         function App() {
             const [price, setPrice] = useState("");
             const [cost, setCost] = useState("");
             const [name, setName] = useState("");
-            const [mType, setMType] = useState("expansion");
-            const [pZone, setPZone] = useState("low");
             const [result, setResult] = useState(null);
 
             const analyze = () => {
                 const p = parseFloat(price);
                 const c = parseFloat(cost);
                 if (!p || !c) return;
-                setResult({ p, c });
+
+                const levels = {
+                    start: (c * 1.04),
+                    rest: (c * 1.2),
+                    target: (c * 1.4),
+                    peak: (c * 1.7)
+                };
+
+                let status = { text: "等待觀察", advice: "尚未突破發動點，耐心等待", color: C.muted, bg: "#2a2f3e33" };
+
+                if (p >= levels.peak) {
+                    status = { text: "🚫 終極韭菜區", advice: "絕對不可進場，風險極高！", color: C.red, bg: `${C.red}22` };
+                } else if (p >= levels.target) {
+                    status = { text: "⚡ 末升段挑戰", advice: "已達第二波目標，慎防回檔", color: C.yellow, bg: `${C.yellow}22` };
+                } else if (p >= levels.rest) {
+                    status = { text: "🚀 主升段進行中", advice: "第一波休息區已過，動能強勁", color: C.green, bg: `${C.green}22` };
+                } else if (p >= levels.start) {
+                    status = { text: "🌱 初試啼聲", advice: "剛過發動點，適合分批佈局", color: C.blue, bg: `${C.blue}22` };
+                }
+
+                setResult({ p, c, levels, status });
             };
 
             return (
@@ -88,34 +76,34 @@
                     </div>
 
                     <div style={s.section}>
-                        <div style={s.sectionTitle}>📊 核心數據</div>
+                        <div style={s.sectionTitle}>📊 核心數據輸入</div>
                         <input style={s.input} placeholder="股票名稱 / 代號" value={name} onChange={e => setName(e.target.value)} />
                         <input style={s.input} type="number" placeholder="當前現價" value={price} onChange={e => setPrice(e.target.value)} />
-                        <input style={s.input} type="number" placeholder="主力成本" value={cost} onChange={e => setCost(e.target.value)} />
-                    </div>
-
-                    <div style={s.section}>
-                        <div style={s.sectionTitle}>🌊 市場盤勢</div>
-                        <div style={s.matrixGrid}>
-                            <RadioBtn label="📈 擴張盤" value="expansion" selected={mType} color={C.green} onClick={() => setMType("expansion")} />
-                            <RadioBtn label="📉 收縮盤" value="contraction" selected={mType} color={C.blue} onClick={() => setMType("contraction")} />
-                        </div>
-                        <div style={s.matrixGrid}>
-                            <RadioBtn label="🟢 低點區" value="low" selected={pZone} color={C.green} onClick={() => setPZone("low")} />
-                            <RadioBtn label="🔴 高點區" value="high" selected={pZone} color={C.red} onClick={() => setPZone("high")} />
-                        </div>
-                        <button style={s.btn} onClick={analyze}>開始發財位階分析</button>
+                        <input style={s.input} type="number" placeholder="主力核心成本" value={cost} onChange={e => setCost(e.target.value)} />
+                        <button style={s.btn} onClick={analyze}>自動判定進場時機</button>
                     </div>
 
                     {result && (
                         <div style={s.section}>
-                            <div style={{textAlign: "center", marginBottom: 20}}>
-                                <div style={{fontSize: 14, color: C.dim}}>{name || "該股"} 目前位階</div>
-                                <div style={{fontSize: 28, fontWeight: 900, color: result.p >= result.c * 1.04 ? C.green : C.yellow}}>
-                                    {result.p >= result.c * 1.7 ? "⚠️ 終極韭菜區" : result.p >= result.c * 1.04 ? "🚀 多頭波浪中" : "⏸️ 成本盤整區"}
-                                </div>
+                            <div style={s.statusBox(result.status.bg)}>
+                                <div style={{fontSize: 14, color: C.dim, marginBottom: 4}}>{name || "該股"} 目前時機</div>
+                                <div style={{fontSize: 24, fontWeight: 900, color: result.status.color, marginBottom: 8}}>{result.status.text}</div>
+                                <div style={{fontSize: 13, color: C.text, opacity: 0.8}}>{result.status.advice}</div>
                             </div>
-                            <WaveTable cost={result.c} price={result.p} label="主力" color={C.pink} />
+
+                            <div style={{color: C.pink, fontSize: 13, fontWeight: 700, marginBottom: 10}}>一路發波浪軌跡</div>
+                            {[
+                                { l: "突破發動點", v: result.levels.start, m: "1.04x" },
+                                { l: "第一波休息", v: result.levels.rest, m: "1.20x" },
+                                { l: "第二波高點", v: result.levels.target, m: "1.40x" },
+                                { l: "終極韭菜區", v: result.levels.peak, m: "1.70x" }
+                            ].map(lv => (
+                                <div key={lv.l} style={{display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: `1px solid ${C.border}`}}>
+                                    <span style={{fontSize: 13, color: C.dim}}>{lv.l} <small>{lv.m}</small></span>
+                                    <span style={{fontSize: 15, fontWeight: 700, color: result.p >= lv.v ? C.green : C.text}}>${lv.v.toFixed(2)}</span>
+                                    <span style={s.badge(result.p >= lv.v)}>{result.p >= lv.v ? "已通過" : "未達標"}</span>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
