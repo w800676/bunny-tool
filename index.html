@@ -29,16 +29,18 @@
             h1: { fontSize: "28px", fontWeight: 900, marginBottom: 20, textAlign: "center", background: `linear-gradient(135deg,#fff 0%,${C.pink} 60%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
             section: { background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20, marginBottom: 16 },
             input: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, color: C.text, fontSize: 18, padding: "14px", outline: "none", width: "100%", boxSizing: "border-box", marginBottom: 12, fontWeight: "700" },
+            btn: { width: "100%", background: `linear-gradient(135deg,${C.pink},${C.purple})`, border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 700, padding: 16, marginTop: 8, cursor: "pointer" },
             statusBox: (bg) => ({ padding: "16px", borderRadius: 12, background: bg, textAlign: "center", marginBottom: 20, border: `1px solid rgba(255,255,255,0.1)` }),
             badge: (active) => ({ display: "inline-flex", fontSize: 11, padding: "2px 8px", borderRadius: 4, background: active ? `${C.green}22` : `${C.muted}11`, color: active ? C.green : C.muted, border: `1px solid ${active ? C.green : C.muted}44` })
         };
 
         function App() {
+            const [name, setName] = useState("");
             const [price, setPrice] = useState("");
             const [cost, setCost] = useState("");
             const [result, setResult] = useState(null);
 
-            // 當輸入變動時自動計算，不需要按按鈕
+            // 自動計算邏輯
             useEffect(() => {
                 const p = parseFloat(price);
                 if (!p || isNaN(p)) {
@@ -46,9 +48,7 @@
                     return;
                 }
 
-                // 如果沒填成本，就拿現價當基準
                 const base = cost ? parseFloat(cost) : p;
-                
                 const levels = {
                     start: base * 1.04,
                     rest: base * 1.2,
@@ -69,26 +69,30 @@
                 <div style={s.wrap}>
                     <div style={{textAlign: "center"}}>
                         <div style={s.headerTag}>168 Finance Lab</div>
-                        <div style={s.h1}>發財強勢股計算機</div>
+                        <div style={s.h1}>發財強勢股精算系統</div>
                     </div>
 
                     <div style={s.section}>
-                        <div style={{color: C.pink, fontSize: 13, fontWeight: 700, marginBottom: 12}}>請輸入數據</div>
+                        <div style={{color: C.pink, fontSize: 13, fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: '5px'}}>
+                           📊 核心數據輸入
+                        </div>
+                        <input style={s.input} type="text" placeholder="股票名稱 / 代號 (選填)" value={name} onChange={e => setName(e.target.value)} />
                         <input style={s.input} type="number" placeholder="當前現價 (必填)" value={price} onChange={e => setPrice(e.target.value)} />
-                        <input style={s.input} type="number" placeholder="主力成本 (選填)" value={cost} onChange={e => setCost(e.target.value)} />
-                        <div style={{fontSize: 12, color: C.dim, textAlign: "center"}}>輸入完畢後結果將自動顯示</div>
+                        <input style={s.input} type="number" placeholder="主力成本 (沒填則以現價計算)" value={cost} onChange={e => setCost(e.target.value)} />
+                        <button style={s.btn} onClick={() => {}}>開始發財分析</button>
                     </div>
 
                     {result && (
                         <div style={s.section}>
                             <div style={s.statusBox(result.status.bg)}>
-                                <div style={{fontSize: 12, color: C.dim, marginBottom: 4}}>
-                                    基準點：${result.base.toFixed(2)} {result.isAutoBase ? "(依現價推算)" : "(依成本計算)"}
-                                </div>
+                                <div style={{fontSize: 14, color: C.dim, marginBottom: 4}}>{name || "該股"} 目前時機</div>
                                 <div style={{fontSize: 24, fontWeight: 900, color: result.status.color, marginBottom: 8}}>{result.status.text}</div>
                                 <div style={{fontSize: 13, color: C.text, opacity: 0.8}}>{result.status.advice}</div>
                             </div>
 
+                            <div style={{color: C.pink, fontSize: 13, fontWeight: 700, marginBottom: 10}}>
+                                基準點：${result.base.toFixed(2)} {result.isAutoBase ? "(依現價推算)" : "(依成本計算)"}
+                            </div>
                             {[
                                 { l: "突破發動點", v: result.levels.start, m: "1.04x" },
                                 { l: "一路發休息區", v: result.levels.rest, m: "1.20x" },
