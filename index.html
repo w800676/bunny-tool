@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐰 Bunny Finance Lab</title>
+    <title>💰 發財一路發財經實驗室</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -46,14 +46,14 @@
 
         function WaveTable({ cost, price, label, color }) {
             const levels = [
-                { l: "突破發動", m: "1.04x", v: (cost * 1.04).toFixed(2) },
-                { l: "第一波休息", m: "1.20x", v: (cost * 1.2).toFixed(2) },
-                { l: "第二波高點", m: "1.40x", v: (cost * 1.4).toFixed(2) },
+                { l: "突破發動點", m: "1.04x", v: (cost * 1.04).toFixed(2) },
+                { l: "一路發高點區", m: "1.20x", v: (cost * 1.2).toFixed(2) },
+                { l: "財富自由區", m: "1.40x", v: (cost * 1.4).toFixed(2) },
                 { l: "終極韭菜區", m: "1.70x", v: (cost * 1.7).toFixed(2) },
             ];
             return (
                 <div style={{marginTop: 15}}>
-                    <div style={{color, fontSize: 13, fontWeight: 700, marginBottom: 10}}>{label}成本波浪軌跡</div>
+                    <div style={{color, fontSize: 13, fontWeight: 700, marginBottom: 10}}>{label}成本一路發波浪軌跡</div>
                     {levels.map(lv => (
                         <div key={lv.l} style={{display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}`}}>
                             <span style={{fontSize: 13, color: C.dim}}>{lv.l} <small>{lv.m}</small></span>
@@ -83,15 +83,15 @@
             return (
                 <div style={s.wrap}>
                     <div style={{textAlign: "center"}}>
-                        <div style={s.headerTag}>Rabbit's Strong Stock</div>
-                        <div style={s.h1}>強勢股精算系統</div>
+                        <div style={s.headerTag}>168 Finance Lab</div>
+                        <div style={s.h1}>發財強勢股精算系統</div>
                     </div>
 
                     <div style={s.section}>
                         <div style={s.sectionTitle}>📊 核心數據</div>
                         <input style={s.input} placeholder="股票名稱 / 代號" value={name} onChange={e => setName(e.target.value)} />
                         <input style={s.input} type="number" placeholder="當前現價" value={price} onChange={e => setPrice(e.target.value)} />
-                        <input style={s.input} type="number" placeholder="法人核心成本" value={cost} onChange={e => setCost(e.target.value)} />
+                        <input style={s.input} type="number" placeholder="主力成本" value={cost} onChange={e => setCost(e.target.value)} />
                     </div>
 
                     <div style={s.section}>
@@ -104,7 +104,7 @@
                             <RadioBtn label="🟢 低點區" value="low" selected={pZone} color={C.green} onClick={() => setPZone("low")} />
                             <RadioBtn label="🔴 高點區" value="high" selected={pZone} color={C.red} onClick={() => setPZone("high")} />
                         </div>
-                        <button style={s.btn} onClick={analyze}>開始位階分析</button>
+                        <button style={s.btn} onClick={analyze}>開始發財位階分析</button>
                     </div>
 
                     {result && (
