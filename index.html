@@ -15,7 +15,7 @@
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
 
         const C = {
             bg: "#0d0f14", surface: "#161921", card: "#1c2030", border: "#2a2f3e",
@@ -28,9 +28,7 @@
             headerTag: { display: "inline-block", fontSize: 10, letterSpacing: 3, color: C.pink, border: `1px solid ${C.pink}`, padding: "4px 12px", borderRadius: 20, marginBottom: 12, textTransform: "uppercase" },
             h1: { fontSize: "28px", fontWeight: 900, marginBottom: 20, textAlign: "center", background: `linear-gradient(135deg,#fff 0%,${C.pink} 60%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
             section: { background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20, marginBottom: 16 },
-            sectionTitle: { fontSize: 13, fontWeight: 700, color: C.pink, marginBottom: 14 },
-            input: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, color: C.text, fontSize: 16, padding: "12px", outline: "none", width: "100%", boxSizing: "border-box", marginBottom: 10 },
-            btn: { width: "100%", background: `linear-gradient(135deg,${C.pink},${C.purple})`, border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 700, padding: 16, marginTop: 8 },
+            input: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, color: C.text, fontSize: 18, padding: "14px", outline: "none", width: "100%", boxSizing: "border-box", marginBottom: 12, fontWeight: "700" },
             statusBox: (bg) => ({ padding: "16px", borderRadius: 12, background: bg, textAlign: "center", marginBottom: 20, border: `1px solid rgba(255,255,255,0.1)` }),
             badge: (active) => ({ display: "inline-flex", fontSize: 11, padding: "2px 8px", borderRadius: 4, background: active ? `${C.green}22` : `${C.muted}11`, color: active ? C.green : C.muted, border: `1px solid ${active ? C.green : C.muted}44` })
         };
@@ -38,77 +36,69 @@
         function App() {
             const [price, setPrice] = useState("");
             const [cost, setCost] = useState("");
-            const [name, setName] = useState("");
             const [result, setResult] = useState(null);
 
-            const analyze = () => {
+            // 當輸入變動時自動計算，不需要按按鈕
+            useEffect(() => {
                 const p = parseFloat(price);
-                // 如果沒輸入成本，就以現價當作基準成本
-                const c = cost ? parseFloat(cost) : p;
-                
-                if (!p) return;
-
-                const levels = {
-                    start: (c * 1.04),
-                    rest: (c * 1.2),
-                    target: (c * 1.4),
-                    peak: (c * 1.7)
-                };
-
-                let status = { text: "等待觀察", advice: "尚未突破發動點，耐心等待", color: C.muted, bg: "#2a2f3e33" };
-
-                // 邏輯判定
-                if (p >= levels.peak) {
-                    status = { text: "🚫 終極韭菜區", advice: "絕對不可進場，風險極高！", color: C.red, bg: `${C.red}22` };
-                } else if (p >= levels.target) {
-                    status = { text: "⚡ 末升段挑戰", advice: "已達第二波目標，慎防回檔", color: C.yellow, bg: `${C.yellow}22` };
-                } else if (p >= levels.rest) {
-                    status = { text: "🚀 主升段進行中", advice: "第一波休息區已過，動能強勁", color: C.green, bg: `${C.green}22` };
-                } else if (p >= levels.start) {
-                    status = { text: "🌱 初試啼聲", advice: "剛過發動點，適合分批佈局", color: C.blue, bg: `${C.blue}22` };
+                if (!p || isNaN(p)) {
+                    setResult(null);
+                    return;
                 }
 
-                setResult({ p, c, levels, status, isCostManual: !!cost });
-            };
+                // 如果沒填成本，就拿現價當基準
+                const base = cost ? parseFloat(cost) : p;
+                
+                const levels = {
+                    start: base * 1.04,
+                    rest: base * 1.2,
+                    target: base * 1.4,
+                    peak: base * 1.7
+                };
+
+                let status = { text: "等待觀察", advice: "尚未突破發動點", color: C.muted, bg: "#2a2f3e33" };
+                if (p >= levels.peak) status = { text: "🚫 終極韭菜區", advice: "風險極高，嚴禁追高", color: C.red, bg: `${C.red}22` };
+                else if (p >= levels.target) status = { text: "⚡ 末升段挑戰", advice: "注意回檔風險", color: C.yellow, bg: `${C.yellow}22` };
+                else if (p >= levels.rest) status = { text: "🚀 主升段進行中", advice: "動能強勁，持股續抱", color: C.green, bg: `${C.green}22` };
+                else if (p >= levels.start) status = { text: "🌱 初試啼聲", advice: "剛過發動點，適合佈局", color: C.blue, bg: `${C.blue}22` };
+
+                setResult({ p, base, levels, status, isAutoBase: !cost });
+            }, [price, cost]);
 
             return (
                 <div style={s.wrap}>
                     <div style={{textAlign: "center"}}>
                         <div style={s.headerTag}>168 Finance Lab</div>
-                        <div style={s.h1}>發財強勢股精算系統</div>
+                        <div style={s.h1}>發財強勢股計算機</div>
                     </div>
 
                     <div style={s.section}>
-                        <div style={s.sectionTitle}>📊 核心數據輸入</div>
-                        <input style={s.input} placeholder="股票名稱 / 代號 (選填)" value={name} onChange={e => setName(e.target.value)} />
+                        <div style={{color: C.pink, fontSize: 13, fontWeight: 700, marginBottom: 12}}>請輸入數據</div>
                         <input style={s.input} type="number" placeholder="當前現價 (必填)" value={price} onChange={e => setPrice(e.target.value)} />
-                        <input style={s.input} type="number" placeholder="主力成本 (沒填則以現價計算)" value={cost} onChange={e => setCost(e.target.value)} />
-                        <button style={s.btn} onClick={analyze}>開始發財分析</button>
+                        <input style={s.input} type="number" placeholder="主力成本 (選填)" value={cost} onChange={e => setCost(e.target.value)} />
+                        <div style={{fontSize: 12, color: C.dim, textAlign: "center"}}>輸入完畢後結果將自動顯示</div>
                     </div>
 
                     {result && (
                         <div style={s.section}>
                             <div style={s.statusBox(result.status.bg)}>
                                 <div style={{fontSize: 12, color: C.dim, marginBottom: 4}}>
-                                    {result.isCostManual ? "依手動成本計算" : "依當前現價推算"}
+                                    基準點：${result.base.toFixed(2)} {result.isAutoBase ? "(依現價推算)" : "(依成本計算)"}
                                 </div>
                                 <div style={{fontSize: 24, fontWeight: 900, color: result.status.color, marginBottom: 8}}>{result.status.text}</div>
                                 <div style={{fontSize: 13, color: C.text, opacity: 0.8}}>{result.status.advice}</div>
                             </div>
 
-                            <div style={{color: C.pink, fontSize: 13, fontWeight: 700, marginBottom: 10}}>
-                                基準成本：${result.c.toFixed(2)}
-                            </div>
                             {[
                                 { l: "突破發動點", v: result.levels.start, m: "1.04x" },
                                 { l: "一路發休息區", v: result.levels.rest, m: "1.20x" },
                                 { l: "財富自由區", v: result.levels.target, m: "1.40x" },
                                 { l: "終極韭菜區", v: result.levels.peak, m: "1.70x" }
                             ].map(lv => (
-                                <div key={lv.l} style={{display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: `1px solid ${C.border}`}}>
-                                    <span style={{fontSize: 13, color: C.dim}}>{lv.l}</span>
-                                    <span style={{fontSize: 15, fontWeight: 700, color: result.p >= lv.v ? C.green : C.text}}>${lv.v.toFixed(2)}</span>
-                                    <span style={s.badge(result.p >= lv.v)}>{result.p >= lv.v ? "已通過" : "待挑戰"}</span>
+                                <div key={lv.l} style={{display: "flex", justifyContent: "space-between", padding: "14px 0", borderBottom: `1px solid ${C.border}`}}>
+                                    <span style={{fontSize: 14, color: C.dim}}>{lv.l}</span>
+                                    <span style={{fontSize: 16, fontWeight: 700, color: result.p >= lv.v ? C.green : C.text}}>${lv.v.toFixed(2)}</span>
+                                    <span style={s.badge(result.p >= lv.v)}>{result.p >= lv.v ? "已過" : "待破"}</span>
                                 </div>
                             ))}
                         </div>
