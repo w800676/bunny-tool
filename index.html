@@ -102,7 +102,7 @@
                                 <div key={lv.l} style={{display: "flex", justifyContent: "space-between", padding: "14px 0", borderBottom: `1px solid ${C.border}`}}>
                                     <span style={{fontSize: 14, color: C.dim}}>{lv.l}</span>
                                     <span style={{fontSize: 16, fontWeight: 700, color: result.p >= lv.v ? C.green : C.text}}>${lv.v.toFixed(2)}</span>
-                                    <span style={s.badge(result.p >= lv.v)}>{result.p >= lv.v ? "已過" : "待破"}</span>
+                                    <span style={s.badge(result.p >= lv.v)}>{result.p >= lv.v ? "已通過" : "待挑戰"}</span>
                                 </div>
                             ))}
                         </div>
