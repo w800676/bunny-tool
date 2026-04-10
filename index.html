@@ -23,12 +23,17 @@ h1{font-size:28px;font-weight:900;background:linear-gradient(135deg,#fff,var(--g
 .input-group label{font-size:11px;color:var(--muted);}
 input{background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--gold);font-family:monospace;font-size:15px;padding:12px;outline:none;width:100%;}
 input:focus{border-color:var(--gold);}
-.btn-auto{width:100%;background:var(--surface);border:1px solid var(--gold)55;border-radius:12px;color:var(--gold);font-size:14px;font-weight:700;padding:14px;cursor:pointer;margin-top:10px;}
+.btn-auto{width:100%;background:var(--surface);border:1px solid var(--gold)55;border-radius:12px;color:var(--gold);font-size:14px;font-weight:700;padding:14px;cursor:pointer;margin-top:10px;display:flex;justify-content:center;align-items:center;gap:10px;}
 .btn-main{width:100%;background:linear-gradient(135deg,var(--gold),#ff9d4d);border:none;border-radius:14px;color:#000;font-size:16px;font-weight:900;padding:18px;cursor:pointer;margin-top:6px;letter-spacing:2px;}
 .fib-table{width:100%;border-collapse:separate;border-spacing:0 4px;font-family:monospace;font-size:12px;}
 .fib-table td{padding:12px 10px;background:var(--surface);}
-.signal-box{padding:15px;border-radius:12px;margin-top:10px;font-size:14px;font-weight:700;text-align:center;line-height:1.5;}
+.signal-box{padding:16px;border-radius:12px;margin-top:10px;font-size:15px;font-weight:900;text-align:center;line-height:1.6;border:2px solid var(--gold);background:rgba(245,200,66,0.05);}
+.wave-details{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;}
+.wave-step{background:var(--surface);padding:10px 5px;border-radius:8px;text-align:center;border:1px solid var(--border);}
+.wave-step div:first-child{font-size:10px;color:var(--muted);margin-bottom:4px;}
+.wave-step div:last-child{font-size:13px;font-weight:700;color:var(--gold);}
 #results{display:none;}
+.loading { opacity: 0.6; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -36,28 +41,27 @@ input:focus{border-color:var(--gold);}
 <div class="header">
   <div class="tag">Fortune System</div>
   <h1>發財強勢股精算系統</h1>
-  <p style="color:var(--muted); font-size:12px;">斐波那契共振 × 法人波浪精算</p>
 </div>
 
 <div class="section">
   <div class="section-title">📡 數據抓取</div>
   <div class="input-group">
-    <label>股票代號 (例: 3481 或 3481.TW)</label>
-    <input type="text" id="ticker" placeholder="輸入代號" style="text-transform:uppercase">
+    <label>股票代號 (台股自動修正格式)</label>
+    <input type="text" id="ticker" placeholder="例如：3481">
   </div>
-  <button class="btn-auto" id="btnAuto" onclick="fetchStockData()">📡 抓取近 90 天高低點</button>
+  <button class="btn-auto" id="btnAuto" onclick="fetchStockData()">📡 啟動強化高低點抓取</button>
 </div>
 
 <div class="section">
-  <div class="section-title">📊 核心價格數據</div>
+  <div class="section-title">📊 核心數據 (已強化自動帶入)</div>
   <div class="input-grid" style="margin-bottom:12px;">
     <div class="input-group"><label>當前現價</label><input type="number" id="price" step="0.01"></div>
     <div class="input-group"><label>波段低點</label><input type="number" id="fibLow" step="0.01"></div>
     <div class="input-group" style="grid-column: span 2;"><label>波段高點</label><input type="number" id="fibHigh" step="0.01"></div>
   </div>
-  <div class="input-grid">
-    <div class="input-group"><label>外資成本</label><input type="number" id="foreign" step="0.01"></div>
-    <div class="input-group"><label>投信成本</label><input type="number" id="trust" step="0.01"></div>
+  <div class="input-group">
+    <label>法人成本 (計算波浪 1.04/1.2/1.4)</label>
+    <input type="number" id="cost" step="0.01" placeholder="填入成本">
   </div>
 </div>
 
@@ -76,32 +80,43 @@ async function fetchStockData() {
     let ticker = document.getElementById('ticker').value.trim().toUpperCase();
     if (!ticker) return alert('請輸入代號');
     
-    // 如果使用者沒加 .TW，幫他加
-    if (!ticker.includes('.')) ticker += '.TW';
+    // 強化：自動判斷台股後綴
+    if (!ticker.includes('.')) {
+        ticker = (ticker.length >= 4) ? ticker + '.TW' : ticker;
+    }
 
     const btn = document.getElementById('btnAuto');
-    btn.textContent = '數據抓取中...';
+    btn.textContent = '強化抓取數據中...';
+    btn.classList.add('loading');
 
     try {
         const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=3mo`;
         const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
         const json = await res.json();
-        const data = JSON.parse(json.contents).chart.result[0];
+        const responseData = JSON.parse(json.contents);
         
+        if (!responseData.chart.result) throw new Error();
+        const data = responseData.chart.result[0];
         const quote = data.indicators.quote[0];
-        const closes = quote.close.filter(v => v != null);
-        const highs = quote.high.filter(v => v != null);
-        const lows = quote.low.filter(v => v != null);
-
-        // 自動寫入你圈起來的欄位
-        document.getElementById('price').value = closes[closes.length-1].toFixed(2);
-        document.getElementById('fibHigh').value = Math.max(...highs).toFixed(2);
-        document.getElementById('fibLow').value = Math.min(...lows).toFixed(2);
         
-        btn.textContent = '✅ 抓取成功';
+        // 核心強化：清洗無效數據 (Null 過濾)
+        const validHighs = quote.high.filter(v => v !== null && typeof v === 'number');
+        const validLows = quote.low.filter(v => v !== null && typeof v === 'number');
+        const validCloses = quote.close.filter(v => v !== null && typeof v === 'number');
+
+        if (validHighs.length === 0) throw new Error();
+
+        // 精確帶入 90 天內絕對值
+        document.getElementById('price').value = validCloses[validCloses.length - 1].toFixed(2);
+        document.getElementById('fibHigh').value = Math.max(...validHighs).toFixed(2);
+        document.getElementById('fibLow').value = Math.min(...validLows).toFixed(2);
+        
+        btn.textContent = '✅ 強化抓取成功';
+        setTimeout(() => { btn.textContent = '📡 啟動強化高低點抓取'; btn.classList.remove('loading'); }, 2000);
     } catch (e) {
-        alert('代號可能錯誤或 API 繁忙，請嘗試手動輸入高低點');
+        alert('抓取失敗！可能是代號輸入有誤，請嘗試手動輸入高點。');
         btn.textContent = '❌ 抓取失敗';
+        btn.classList.remove('loading');
     }
 }
 
@@ -109,44 +124,46 @@ function runAnalysis() {
     const price = parseFloat(document.getElementById('price').value);
     const hi = parseFloat(document.getElementById('fibHigh').value);
     const lo = parseFloat(document.getElementById('fibLow').value);
-    const fCost = parseFloat(document.getElementById('foreign').value) || 0;
-    const tCost = parseFloat(document.getElementById('trust').value) || 0;
+    const cost = parseFloat(document.getElementById('cost').value);
 
-    if (!price || !hi || !lo) return alert('請確保現價、高低點已填入');
+    if (!price || !hi || !lo) return alert('數據不完整，請確保高低點已填入！');
     document.getElementById('results').style.display = 'block';
 
+    // 斐波那契位階
     const range = hi - lo;
-    const levels = [
-        {r: 0, l: '起漲低點'}, {r: 0.382, l: '強勢回調'}, {r: 0.5, l: '多空分界'}, 
-        {r: 0.618, l: '黃金分割'}, {r: 0.786, l: '深層回測'}, {r: 1, l: '波段高點'}
-    ];
-    
-    let fibHTML = `<tr><th>位階</th><th>價格</th><th>判斷</th></tr>`;
+    const levels = [{r:0,l:'低點'}, {r:0.382,l:'強勢'}, {r:0.5,l:'分界'}, {r:0.618,l:'黃金'}, {r:0.809,l:'防守'}, {r:1,l:'高點'}];
+    let fibHTML = `<tr><th>位階</th><th>價格</th><th>判定</th></tr>`;
     levels.forEach(lvl => {
         const p = +(lo + range * lvl.r).toFixed(2);
-        const isNear = Math.abs(price - p) / price < 0.015;
-        let note = "--";
-        if (isNear && (lvl.r === 0.382 || lvl.r === 0.618)) note = "⭐ 進場點";
-
-        fibHTML += `<tr>
-            <td style="color:var(--gold)">${lvl.l}</td>
-            <td>$${p}</td>
-            <td style="color:${isNear?'var(--green)':'var(--dim)'}">${note}</td>
-        </tr>`;
+        const hit = Math.abs(price - p) / price < 0.015;
+        fibHTML += `<tr><td style="color:var(--gold)">${lvl.l}</td><td>$${p}</td><td style="color:${hit?'var(--green)':'var(--dim)'}">${hit?'⭐觀測位':'--'}</td></tr>`;
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    const mCost = tCost || fCost;
-    let waveHTML = `<div class="section-title">🌊 波浪進出場建議</div>`;
-    if (mCost) {
-        const bP = (mCost * 1.04).toFixed(2);
-        const t2 = (mCost * 1.4).toFixed(2);
-        let msg = price >= t2 ? "💰 1.4 已抵達，出場！" : price >= bP ? "🚀 啟動中，持股進場！" : "⏳ 觀望中";
-        waveHTML += `<div class="signal-box" style="border:1px solid var(--gold)">${msg}</div>`;
+    // 波浪進出場建議 (完整版 1.04 / 1.2 / 1.4)
+    let waveHTML = `<div class="section-title">🌊 完整波浪進出場判定</div>`;
+    if (cost) {
+        const bP = (cost * 1.04).toFixed(2); // 進場位
+        const t1 = (cost * 1.20).toFixed(2); // 觀察位
+        const t2 = (cost * 1.40).toFixed(2); // 滿足位
+        
+        let msg = ""; let color = "var(--gold)";
+        if (price < bP) { msg = "⏳ 尚未發動：觀察 1.04 突破"; }
+        else if (price >= bP && price < t1) { msg = "🚀 啟動位已過：強勢持股中"; color = "var(--green)"; }
+        else if (price >= t1 && price < t2) { msg = "📈 達 1.2 關卡：建議分批減碼"; color = "var(--green)"; }
+        else if (price >= t2) { msg = "💰 達 1.4 滿足：獲利落袋為安"; color = "var(--red)"; }
+
+        waveHTML += `<div class="signal-box" style="color:${color}; border-color:${color}">${msg}</div>
+            <div class="wave-details">
+                <div class="wave-step"><div>1.04 進場</div><div>$${bP}</div></div>
+                <div class="wave-step"><div>1.20 觀察</div><div>$${t1}</div></div>
+                <div class="wave-step"><div>1.40 滿足</div><div>$${t2}</div></div>
+            </div>`;
     } else {
-        waveHTML += `<div class="signal-box">請填寫成本以判定進出場</div>`;
+        waveHTML += `<div class="signal-box">請輸入法人成本以分析波浪位階</div>`;
     }
     document.getElementById('waveOutput').innerHTML = waveHTML;
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 </script>
 </body>
