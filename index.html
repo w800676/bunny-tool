@@ -6,7 +6,6 @@
 <title>發財強勢股精算系統｜Fortune Pro</title>
 <style>
 :root {
-  /* 僅將色調調整為發財金，其餘介面變數名稱與數值完全保留原始比例 */
   --bg:#0d0f14; --surface:#161921; --card:#1c2030; --border:#3d341a;
   --gold:#f5c842; --green:#4ade80; --red:#f87171;
   --text:#f5eec8; --muted:#857f61; --dim:#a39e7e;
@@ -24,7 +23,6 @@ h1{font-size:28px;font-weight:900;background:linear-gradient(135deg,#fff,var(--g
 .input-group label{font-size:11px;color:var(--muted);}
 input{background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--gold);font-family:monospace;font-size:15px;padding:12px;outline:none;width:100%;}
 input:focus{border-color:var(--gold);}
-/* 維持原始按鈕介面樣式 */
 .btn-auto{width:100%;background:var(--surface);border:1px solid var(--gold)55;border-radius:12px;color:var(--gold);font-size:14px;font-weight:700;padding:14px;cursor:pointer;margin-top:10px;}
 .btn-main{width:100%;background:linear-gradient(135deg,var(--gold),#ff9d4d);border:none;border-radius:14px;color:#000;font-size:16px;font-weight:900;padding:18px;cursor:pointer;margin-top:6px;letter-spacing:2px;}
 .fib-table{width:100%;border-collapse:separate;border-spacing:0 4px;font-family:monospace;font-size:12px;}
@@ -44,8 +42,8 @@ input:focus{border-color:var(--gold);}
 <div class="section">
   <div class="section-title">📡 數據抓取</div>
   <div class="input-group">
-    <label>股票代號 (台股請加 .TW)</label>
-    <input type="text" id="ticker" placeholder="例如：3481.TW" style="text-transform:uppercase">
+    <label>股票代號 (例: 3481 或 3481.TW)</label>
+    <input type="text" id="ticker" placeholder="輸入代號" style="text-transform:uppercase">
   </div>
   <button class="btn-auto" id="btnAuto" onclick="fetchStockData()">📡 抓取近 90 天高低點</button>
 </div>
@@ -74,10 +72,13 @@ input:focus{border-color:var(--gold);}
 </div>
 
 <script>
-// 使用更穩定的請求方式來修復抓取失敗
 async function fetchStockData() {
-    const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+    let ticker = document.getElementById('ticker').value.trim().toUpperCase();
     if (!ticker) return alert('請輸入代號');
+    
+    // 如果使用者沒加 .TW，幫他加
+    if (!ticker.includes('.')) ticker += '.TW';
+
     const btn = document.getElementById('btnAuto');
     btn.textContent = '數據抓取中...';
 
@@ -92,12 +93,14 @@ async function fetchStockData() {
         const highs = quote.high.filter(v => v != null);
         const lows = quote.low.filter(v => v != null);
 
+        // 自動寫入你圈起來的欄位
         document.getElementById('price').value = closes[closes.length-1].toFixed(2);
         document.getElementById('fibHigh').value = Math.max(...highs).toFixed(2);
         document.getElementById('fibLow').value = Math.min(...lows).toFixed(2);
+        
         btn.textContent = '✅ 抓取成功';
     } catch (e) {
-        alert('API 暫時繁忙，請手動填寫數據');
+        alert('代號可能錯誤或 API 繁忙，請嘗試手動輸入高低點');
         btn.textContent = '❌ 抓取失敗';
     }
 }
@@ -109,7 +112,7 @@ function runAnalysis() {
     const fCost = parseFloat(document.getElementById('foreign').value) || 0;
     const tCost = parseFloat(document.getElementById('trust').value) || 0;
 
-    if (!price || !hi || !lo) return alert('請確保數據完整');
+    if (!price || !hi || !lo) return alert('請確保現價、高低點已填入');
     document.getElementById('results').style.display = 'block';
 
     const range = hi - lo;
@@ -118,38 +121,32 @@ function runAnalysis() {
         {r: 0.618, l: '黃金分割'}, {r: 0.786, l: '深層回測'}, {r: 1, l: '波段高點'}
     ];
     
-    // 表格內容：增加進場判定文字
     let fibHTML = `<tr><th>位階</th><th>價格</th><th>判斷</th></tr>`;
     levels.forEach(lvl => {
         const p = +(lo + range * lvl.r).toFixed(2);
-        const hit = Math.abs(price - p) / price < 0.015;
+        const isNear = Math.abs(price - p) / price < 0.015;
         let note = "--";
-        if (hit && (lvl.r === 0.382 || lvl.r === 0.618)) note = "⭐ 進場點";
-        else if (hit) note = "共振位";
+        if (isNear && (lvl.r === 0.382 || lvl.r === 0.618)) note = "⭐ 進場點";
 
         fibHTML += `<tr>
             <td style="color:var(--gold)">${lvl.l}</td>
             <td>$${p}</td>
-            <td style="color:${hit?'var(--green)':'var(--dim)'}">${note}</td>
+            <td style="color:${isNear?'var(--green)':'var(--dim)'}">${note}</td>
         </tr>`;
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    // 波浪進出場 (1.04/1.2/1.4)
     const mCost = tCost || fCost;
     let waveHTML = `<div class="section-title">🌊 波浪進出場建議</div>`;
     if (mCost) {
         const bP = (mCost * 1.04).toFixed(2);
-        const t1 = (mCost * 1.2).toFixed(2);
         const t2 = (mCost * 1.4).toFixed(2);
-        let msg = price >= t2 ? "💰 1.4 已抵達，出場！" : price >= bP ? "🚀 啟動中，持股進場！" : "⏳ 觀望等待中";
-        waveHTML += `<div class="signal-box" style="border:1px solid var(--gold)">${msg}</div>
-            <p style="font-size:11px; color:var(--dim); margin-top:8px;">進場 $${bP} | 目標一 $${t1} | 目標二 $${t2}</p>`;
+        let msg = price >= t2 ? "💰 1.4 已抵達，出場！" : price >= bP ? "🚀 啟動中，持股進場！" : "⏳ 觀望中";
+        waveHTML += `<div class="signal-box" style="border:1px solid var(--gold)">${msg}</div>`;
     } else {
-        waveHTML += `<div class="signal-box">請填寫成本以判斷進出場</div>`;
+        waveHTML += `<div class="signal-box">請填寫成本以判定進出場</div>`;
     }
     document.getElementById('waveOutput').innerHTML = waveHTML;
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 </script>
 </body>
