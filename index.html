@@ -74,10 +74,7 @@
 
 <div id="analysisResult" style="display:none;">
   <div class="status-box" id="statusBox">
-    <div id="resEmoji" style="font-size:48px; margin-bottom:10px;">⌛</div>
-    <div id="resSignal" style="font-size:24px; font-weight:900;">--</div>
-    <div id="resReason" style="font-size:12px; color:var(--text-muted); margin-top:10px; line-height:1.6; text-align:left; background:rgba(0,0,0,0.2); padding:12px; border-radius:10px;"></div>
-  </div>
+    </div>
 
   <div class="card">
     <div class="card-title">📐 斐波那契進出場判斷</div>
@@ -91,55 +88,86 @@
 </div>
 
 <script>
-// 已自動帶入您的 FinMind API 金鑰
-const FINMIND_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0xMCAyMDoyNDoxNiIsInVzZXJfaWQiOiJodWFuZzgwNjc2IiwiZW1haWwiOiJ3ODAwNjc2QGdtYWlsLmNvbSIsImlwIjoiMTE0LjI2LjE5LjI4In0.n4LsA6p_i00ZcN45pQ0VS6MYtJXnh8HGXDYHWLwcmP8";
+const FINMIND_TOKEN = "EyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0xMCAyMDoyNDoxNiIsInVzZXJfaWQiOiJodWFuZzgwNjc2IiwiZW1haWwiOiJ3ODAwNjc2QGdtYWlsLmNvbSIsImlwIjoiMTE0LjI2LjE5LjI4In0.n4LsA6p_i00ZcN45pQ0VS6MYtJXnh8HGXDYHWLwcmP8";
+
+function calcEntryTiming(price, cost) {
+  const bt = +(cost * 1.04).toFixed(2);
+  const g1 = +(cost * 1.2).toFixed(2);
+  const g2 = +(cost * 1.4).toFixed(2);
+  const g3 = +(cost * 1.7).toFixed(2);
+
+  if (price < cost) return {
+    phase: "法人收貨期", phaseIdx: 0, signal: "禁止進場", emoji: "🚫", color: "var(--accent-red)", canEnter: false,
+    entry: null, stopLoss: null, target: cost,
+    timing: `現價低於法人成本 $${cost}，法人仍在壓低收貨。等現價站上成本後再觀察。`,
+    rule: "不該進場：現價低於法人成本，沒有波浪基礎。"
+  };
+  if (price < bt) return {
+    phase: "突破前蓄力", phaseIdx: 1, signal: "等待突破", emoji: "👀", color: "var(--accent-gold)", canEnter: false,
+    entry: bt, stopLoss: +(cost * 0.97).toFixed(2), target: g1,
+    timing: `現價距突破點 $${bt} 還差 ${(((bt - price) / price) * 100).toFixed(1)}%。等放量突破後才是進場點。`,
+    rule: "尚未突破：等量能訊號出現。"
+  };
+  if (price < g1) {
+    const fromBt = (((price - bt) / bt) * 100).toFixed(1);
+    const isEarly = fromBt <= 3;
+    return {
+      phase: "第一波啟動", phaseIdx: 2, signal: isEarly ? "第一進場點" : "等盤整加碼", emoji: isEarly ? "🟢" : "📊", color: "var(--accent-green)", canEnter: isEarly,
+      entry: isEarly ? price : null, stopLoss: +(bt * 0.98).toFixed(2), target: g1,
+      timing: isEarly ? `剛突破 $${bt}，為第一進場點。停損設 $${+(bt * 0.98).toFixed(2)}。` : `已上漲 ${fromBt}%，追高風險較高。等縮量回踩後再進。`,
+      rule: isEarly ? "最佳買點：剛突破成本 4%。" : "等盤整：漲幅已過 3%，不宜硬追。"
+    };
+  }
+  if (price < g2) {
+    const fromG1 = (((price - g1) / g1) * 100).toFixed(1);
+    const isEarly = fromG1 <= 3;
+    return {
+      phase: "第二波推升", phaseIdx: 3, signal: isEarly ? "關卡突破加碼" : "等盤整後進", emoji: isEarly ? "🚀" : "⏳", color: "var(--accent-green)", canEnter: isEarly,
+      entry: isEarly ? price : null, stopLoss: +(g1 * 0.97).toFixed(2), target: g2,
+      timing: isEarly ? `突破關卡一 $${g1}，波段加碼機會。目標 $${g2}。` : `過關卡一後上漲 ${fromG1}%，等 3-5 日盤整縮量。`,
+      rule: isEarly ? "加碼時機：剛突破關卡一。" : "等盤整：等關卡一回踩完畢。"
+    };
+  }
+  if (price < g3) {
+    const fromG2 = (((price - g2) / g2) * 100).toFixed(1);
+    const isEarly = fromG2 <= 3;
+    return {
+      phase: "第三波衝刺", phaseIdx: 4, signal: isEarly ? "最後加碼" : "分批出場", emoji: isEarly ? "🏔️" : "🔔", color: isEarly ? "var(--accent-gold)" : "var(--accent-red)", canEnter: isEarly,
+      entry: isEarly ? price : null, stopLoss: +(g2 * 0.97).toFixed(2), target: g3,
+      timing: isEarly ? `突破關卡二 $${g2}，最後加碼但風險已高。` : `接近關卡三 $${g3}，空手者禁進，持有者準備出場。`,
+      rule: "末升段：風險報酬比已降低。"
+    };
+  }
+  return {
+    phase: "高點區域", phaseIdx: 5, signal: "禁止追買", emoji: "🔴", color: "var(--accent-red)", canEnter: false,
+    entry: null, stopLoss: null, target: null,
+    timing: `現價已達關卡三 $${g3} (1.7倍)，歷史高點。請分批獲利了結。`,
+    rule: "韭菜陷阱：已達最高目標，隨時回檔。"
+  };
+}
 
 async function fetchFinMindData() {
     const ticker = document.getElementById('ticker').value.trim();
     if (!ticker) return alert('請輸入股票代號');
-
     const btn = document.getElementById('btnFetch');
     btn.textContent = '🚀 FinMind 數據同步中...';
-    btn.style.opacity = "0.6";
-
-    // 自動計算日期範圍：確保包含足夠的交易日 (95天)
     const endDate = new Date().toISOString().split('T')[0];
     const startDate = new Date(new Date().setDate(new Date().getDate() - 95)).toISOString().split('T')[0];
 
     try {
         const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${ticker}&start_date=${startDate}&end_date=${endDate}&token=${FINMIND_TOKEN}`;
-
         const response = await fetch(url);
         const json = await response.json();
-
-        if (json.status !== 200 || !json.data || json.data.length === 0) {
-            throw new Error('查無數據或代號錯誤');
-        }
-
+        if (json.status !== 200 || !json.data || json.data.length === 0) throw new Error('查無數據');
         const data = json.data;
-        const currentPrice = data[data.length - 1].close;
-        const allHighs = data.map(d => d.max);
-        const allLows = data.map(d => d.min);
-
-        document.getElementById('price').value = currentPrice;
-        document.getElementById('high').value = Math.max(...allHighs).toFixed(2);
-        document.getElementById('low').value = Math.min(...allLows).toFixed(2);
-        
+        document.getElementById('price').value = data[data.length - 1].close;
+        document.getElementById('high').value = Math.max(...data.map(d => d.max)).toFixed(2);
+        document.getElementById('low').value = Math.min(...data.map(d => d.min)).toFixed(2);
         btn.textContent = '✅ 專業同步成功';
-        btn.style.background = 'var(--accent-green)';
-        btn.style.color = '#000';
-        btn.style.opacity = "1";
-        setTimeout(() => { 
-            btn.textContent = '📡 啟動專業 API 抓取'; 
-            btn.style.background = '';
-            btn.style.color = '';
-        }, 2000);
-
+        setTimeout(() => { btn.textContent = '📡 啟動專業 API 抓取'; }, 2000);
     } catch (e) {
-        console.error(e);
-        alert('❌ 抓取失敗：請檢查代號是否正確，或確認 API Token 額度。');
+        alert('❌ 抓取失敗');
         btn.textContent = '❌ 同步失敗';
-        btn.style.opacity = "1";
     }
 }
 
@@ -152,6 +180,7 @@ function runAnalysis() {
     if (!p || !hi || !lo) return alert('核心價格數據不足');
     document.getElementById('analysisResult').style.display = 'block';
 
+    // 1. 斐波那契計算
     const range = hi - lo;
     const fibRatios = [
         { r: 0, l: "起漲點", role: "強力支撐" },
@@ -159,60 +188,59 @@ function runAnalysis() {
         { r: 0.5, l: "50.0%", role: "多空分界" },
         { r: 0.618, l: "61.8%", role: "黃金比例" },
         { r: 0.786, l: "78.6%", role: "深層回測" },
-        { r: 1, l: "波段高點", role: "短線壓力" },
-        { r: 1.618, l: "161.8%", role: "噴發目標" }
+        { r: 1, l: "波段高點", role: "短線壓力" }
     ];
-
     let fibHTML = "";
     fibRatios.forEach(f => {
-        const val = f.r <= 1 ? (hi - range * (1 - f.r)) : (hi + range * (f.r - 1));
-        const diff = Math.abs(p - val) / p;
-        const isNear = diff < 0.015;
-        
-        fibHTML += `
-            <tr>
-                <td><span style="font-size:10px; color:var(--text-muted)">${f.l}</span><br>${f.role}</td>
-                <td class="price-text">$${val.toFixed(2)}</td>
-                <td style="color:${isNear ? 'var(--accent-green)' : (p > val ? 'var(--accent-red)' : 'var(--text-muted)')}">
-                    ${isNear ? '🎯 價格在此' : (p > val ? '▲ 支撐' : '▼ 壓力')}
-                </td>
-            </tr>`;
+        const val = hi - range * (1 - f.r);
+        const isNear = Math.abs(p - val) / p < 0.015;
+        fibHTML += `<tr><td><span style="font-size:10px; color:var(--text-muted)">${f.l}</span><br>${f.role}</td><td class="price-text">$${val.toFixed(2)}</td><td style="color:${isNear ? 'var(--accent-green)' : (p > val ? 'var(--accent-red)' : 'var(--text-muted)')}">${isNear ? '🎯 價格在此' : (p > val ? '▲ 支撐' : '▼ 壓力')}</td></tr>`;
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
+    // 2. 核心診斷介面 (整合圖片樣式)
     if (cost) {
-        const t1 = cost * 1.04;
-        const t2 = cost * 1.2;
-        const t3 = cost * 1.4;
+        const timing = calcEntryTiming(p, cost);
+        const phases = ["收貨期", "蓄力", "第一波", "第二波", "第三波", "高點"];
+        const phaseColors = ['#f87171', '#f5c842', '#4ade80', '#4ade80', '#f5c842', '#f87171'];
+
+        let stepBarHTML = `<div style="display:flex; gap:6px; margin-bottom:20px;">`;
+        phases.forEach((name, idx) => {
+            const isActive = idx === timing.phaseIdx;
+            const barColor = isActive ? phaseColors[idx] : '#2d323d';
+            stepBarHTML += `<div style="flex:1; text-align:center;"><div style="height:4px; background:${barColor}; border-radius:2px; opacity:${isActive ? '1' : '0.2'}; margin-bottom:8px;"></div><div style="font-size:10px; color:${isActive ? '#fff' : 'var(--text-muted)'}">${name}</div></div>`;
+        });
+        stepBarHTML += `</div>`;
+
+        document.getElementById('statusBox').innerHTML = `
+            ${stepBarHTML}
+            <div style="background:rgba(255,255,255,0.03); border-radius:14px; padding:18px; border-left:4px solid ${timing.color}; text-align:left;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div><span style="font-size:20px; font-weight:900; color:${timing.color};">${timing.emoji} ${timing.signal}</span><div style="font-size:12px; color:var(--text-muted);">${timing.phase}</div></div>
+                    <div style="background:${timing.canEnter ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)'}; color:${timing.canEnter ? '#4ade80' : '#f87171'}; padding:4px 12px; border-radius:20px; font-size:12px; border:1px solid;">${timing.canEnter ? '可進場' : '不建議'}</div>
+                </div>
+                <p style="font-size:13px; line-height:1.6; color:#d1d5db;">${timing.timing}</p>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:15px;">
+                <div class="target-item"><div class="target-label">建議買點</div><div class="target-val" style="color:var(--accent-green)">${timing.entry ? '$'+timing.entry : '--'}</div></div>
+                <div class="target-item"><div class="target-label">停損參考</div><div class="target-val" style="color:var(--accent-red)">${timing.stopLoss ? '$'+timing.stopLoss : '--'}</div></div>
+                <div class="target-item"><div class="target-label">波段目標</div><div class="target-val">${timing.target ? '$'+timing.target : '--'}</div></div>
+            </div>
+            <div style="margin-top:15px; font-size:12px; color:var(--text-muted); background:rgba(0,0,0,0.2); padding:10px; border-radius:10px; text-align:left;">💡 ${timing.rule}</div>
+        `;
+        document.getElementById('statusBox').style.borderColor = timing.color;
+
+        // 更新波浪小卡片
+        const t1 = cost * 1.04; const t2 = cost * 1.2; const t3 = cost * 1.4;
         document.getElementById('waveTargets').innerHTML = `
             <div class="target-item"><div class="target-label">突破點 1.04</div><div class="target-val">$${t1.toFixed(2)}</div></div>
             <div class="target-item"><div class="target-label">目標一 1.20</div><div class="target-val" style="color:var(--accent-purple)">$${t2.toFixed(2)}</div></div>
-            <div class="target-item"><div class="target-label">目標二 1.40</div><div class="target-val" style="color:var(--accent-red)">$${t3.toFixed(2)}</div></div>
-        `;
+            <div class="target-item"><div class="target-label">目標二 1.40</div><div class="target-val" style="color:var(--accent-red)">$${t3.toFixed(2)}</div></div>`;
     } else {
+        document.getElementById('statusBox').innerHTML = `<div style="font-size:48px; margin-bottom:10px;">⚖️</div><div style="font-size:24px; font-weight:900; color:var(--accent-gold)">區間觀察中</div><div style="font-size:12px; color:var(--text-muted); margin-top:10px;">請輸入「法人成本」以利系統進行波浪進場判斷。</div>`;
         document.getElementById('waveTargets').innerHTML = '<p style="color:var(--text-muted); font-size:12px; grid-column: 1/4;">輸入法人成本顯示目標</p>';
     }
 
-    let sig = "區間觀察"; let emj = "⚖️"; let clr = "var(--accent-gold)";
-    let reason = "目前股價在三個月區間內震盪。技術分析顯示，應優先守穩 61.8% 附近支撐再考慮擴大部位。";
-
-    if (p >= hi) {
-        sig = "強勢噴發"; emj = "🚀"; clr = "var(--accent-green)";
-        reason = "股價已成功站上波段高點！若量能持續，預計開啟新一波「發財行情」，挑戰 1.618 翻倍目標。";
-    } else if (p < lo) {
-        sig = "趨勢轉空"; emj = "🛑"; clr = "var(--accent-red)";
-        reason = "目前跌破三個月支撐點，空頭力道強勁。建議保持現金水位，切勿在此盲目接刀。";
-    } else if (cost && p > cost * 1.04) {
-        sig = "法人抬頭"; emj = "💰"; clr = "var(--accent-purple)";
-        reason = "現價已站上法人成本突破點（1.04 倍），顯示主力有拉抬意願，具備共振動能。";
-    }
-
-    document.getElementById('resEmoji').textContent = emj;
-    document.getElementById('resSignal').textContent = sig;
-    document.getElementById('resSignal').style.color = clr;
-    document.getElementById('statusBox').style.borderColor = clr;
-    document.getElementById('resReason').textContent = reason;
-    
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 </script>
