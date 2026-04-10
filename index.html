@@ -3,135 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>💰 發財強勢股精算系統 (自動化版)</title>
+    <title>🐰 Bunny Finance Lab | 法人波浪分析系統</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        body { margin: 0; background: #0d0f14; font-family: -apple-system, system-ui, sans-serif; color: #e8eaf0; }
-        .container { min-height: 100vh; padding: 24px 16px; box-sizing: border-box; }
-        .header-tag { display: inline-block; font-size: 10px; letter-spacing: 3px; color: #ff6b9d; border: 1px solid #ff6b9d; padding: 4px 16px; border-radius: 20px; margin-bottom: 12px; }
-        .h1 { font-size: 28px; font-weight: 900; margin-bottom: 24px; text-align: center; color: #fff; }
-        .card { background: #1c2030; border: 1px solid #2a2f3e; border-radius: 20px; padding: 20px; margin-bottom: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .input-title { font-size: 14px; color: #ff6b9d; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; }
-        input { width: 100%; background: #161921; border: 1px solid #2a2f3e; border-radius: 12px; padding: 14px; color: #fff; margin-bottom: 12px; box-sizing: border-box; outline: none; font-size: 16px; font-weight: 600; }
-        .fetch-btn { width: 100%; background: linear-gradient(135deg, #ff6b9d 0%, #a855f7 100%); border: none; border-radius: 12px; color: #fff; padding: 16px; font-weight: 800; cursor: pointer; margin-top: 8px; font-size: 16px; transition: 0.2s; }
-        .fetch-btn:active { transform: scale(0.97); opacity: 0.9; }
+        body { margin: 0; background: #0d0f14; font-family: -apple-system, system-ui, sans-serif; color: #e8eaf0; -webkit-font-smoothing: antialiased; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .container { max-width: 500px; margin: 0 auto; padding: 24px 16px 80px; }
+        .fetch-btn { width: 100%; background: linear-gradient(135deg, #ff6b9d 0%, #a78bfa 100%); border: none; border-radius: 14px; color: #fff; padding: 16px; font-weight: 800; cursor: pointer; font-size: 16px; margin-top: 10px; transition: 0.2s; box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3); }
+        .fetch-btn:active { transform: scale(0.97); }
         .fetch-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .label { color: #9ca3af; font-size: 15px; }
-        .val { font-weight: 700; font-size: 18px; }
-        .badge { font-size: 11px; padding: 3px 8px; border-radius: 6px; margin-left: 10px; font-weight: 800; text-transform: uppercase; }
-        .status-up { background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
-        .status-wait { background: rgba(156, 163, 175, 0.1); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.2); }
-        .loading-text { font-size: 12px; color: #9ca3af; text-align: center; margin-top: 10px; }
+        /* 這裡放你提供的 C 物件轉換成的 CSS 變數 */
+        :root { --pink: #ff6b9d; --border: #2a2f3e; --card: #1c2030; --surface: #161921; }
     </style>
 </head>
 <body>
     <div id="root"></div>
+
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useCallback } = React;
 
-        function App() {
-            const [symbol, setSymbol] = useState("");
-            const [price, setPrice] = useState("");
-            const [cost, setCost] = useState("");
-            const [loading, setLoading] = useState(false);
+        const C = {
+            bg: "#0d0f14", surface: "#161921", card: "#1c2030", border: "#2a2f3e",
+            pink: "#ff6b9d", green: "#4ade80", red: "#f87171", yellow: "#fbbf24",
+            blue: "#60a5fa", purple: "#a78bfa", text: "#e8eaf0", muted: "#6b7280", dim: "#9ca3af",
+        };
 
-            const fetchStockData = async () => {
-                if (!symbol || symbol.length < 4) { alert("請輸入 4 位數股票代號"); return; }
-                setLoading(true);
-                try {
-                    // 抓取近 40 天數據確保計算波段
-                    const start = new Date(Date.now() - 40 * 86400000).toISOString().split('T')[0];
-                    const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${symbol}&start_date=${start}`;
-                    const res = await fetch(url);
-                    const json = await res.json();
-                    
-                    if (json.data && json.data.length > 0) {
-                        const latest = json.data[json.data.length - 1];
-                        setPrice(String(latest.close));
-                    } else { alert("查無此股票數據"); }
-                } catch (e) { alert("網路連線異常"); }
-                setLoading(false);
-            };
+        // --- 核心計算邏輯 ( calcEntryTiming ) ---
+        function calcEntryTiming(price, cost) {
+            const bt = +(cost * 1.04).toFixed(2);
+            const g1 = +(cost * 1.2).toFixed(2);
+            const g2 = +(cost * 1.4).toFixed(2);
+            const g3 = +(cost * 1.7).toFixed(2);
 
-            const renderAnalysis = () => {
-                const p = parseFloat(price);
-                if (isNaN(p)) return null;
+            if (price < cost) return { phase: "法人收貨期", color: C.red, emoji: "🚫", signal: "禁止進場", canEnter: false, phaseIdx: 0, timing: "現價低於法人成本，趨勢未形成。" };
+            if (price < bt) return { phase: "突破前蓄力", color: C.yellow, emoji: "👀", signal: "等待突破", canEnter: false, phaseIdx: 1, timing: `距突破點 $${bt} 尚差 ${(((bt-price)/price)*100).toFixed(1)}%` };
+            if (price < g1) return { phase: "第一波啟動", color: C.green, emoji: "🟢", signal: "第一進場點", canEnter: true, phaseIdx: 2, timing: "已突破 1.04 倍，多頭啟動。" };
+            if (price < g2) return { phase: "第二波推升", color: C.green, emoji: "🚀", signal: "強勢加碼區", canEnter: true, phaseIdx: 3, timing: "朝目標關卡二 $"+g2+" 前進。" };
+            return { phase: "高點區域", color: C.red, emoji: "🔴", signal: "分批減碼", canEnter: false, phaseIdx: 4, timing: "已進入韭菜區，不宜追高。" };
+        }
 
-                const base = cost ? parseFloat(cost) : p;
-                const levels = [
-                    { n: "發動點", v: base * 1.04, c: "#60a5fa" },
-                    { n: "休息區", v: base * 1.20, c: "#fbbf24" },
-                    { n: "目標區", v: base * 1.40, c: "#4ade80" },
-                    { n: "韭菜區", v: base * 1.70, c: "#f87171" }
-                ];
-
-                return (
-                    <div className="card" style={{marginTop: 20}}>
-                        <div style={{fontSize: 13, color: '#9ca3af', marginBottom: 15, borderLeft: '3px solid #ff6b9d', paddingLeft: 10}}>
-                            基準成本：${base.toFixed(2)}
-                        </div>
-                        {levels.map(l => (
-                            <div key={l.n} className="result-row">
-                                <div style={{display:'flex', alignItems:'center'}}>
-                                    <span className="label">{l.n}</span>
-                                    <span className={`badge ${p >= l.v ? 'status-up' : 'status-wait'}`}>
-                                        {p >= l.v ? "已突破" : "待啟動"}
-                                    </span>
-                                </div>
-                                <span className="val" style={{color: l.c}}>${l.v.toFixed(2)}</span>
+        // --- 子元件: 進場卡片 ---
+        function EntryTimingCard({ cost, price, label, color }) {
+            const t = calcEntryTiming(price, cost);
+            const phases = ["收貨", "蓄力", "第一波", "第二波", "高點"];
+            return (
+                <div style={{ marginBottom: 20, background: C.surface, padding: 16, borderRadius: 12, border: `1px solid ${C.border}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                        <span style={{ color, fontWeight: 800, fontSize: 13 }}>{label}成本波浪分析</span>
+                        <span style={{ color: C.dim, fontSize: 11 }}>基準 ${cost}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 4, marginBottom: 15 }}>
+                        {phases.map((p, i) => (
+                            <div key={i} style={{ flex: 1 }}>
+                                <div style={{ height: 4, borderRadius: 2, background: i === t.phaseIdx ? t.color : C.border, marginBottom: 4 }} />
+                                <div style={{ fontSize: 9, textAlign: 'center', color: i === t.phaseIdx ? C.text : C.muted }}>{p}</div>
                             </div>
                         ))}
                     </div>
-                );
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 24 }}>{t.emoji}</span>
+                        <div>
+                            <div style={{ color: t.color, fontWeight: 900, fontSize: 16 }}>{t.signal}</div>
+                            <div style={{ color: C.dim, fontSize: 12 }}>{t.timing}</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 主程式 App ---
+        function App() {
+            const [code, setCode] = useState("");
+            const [price, setPrice] = useState("");
+            const [foreign, setForeign] = useState("");
+            const [trust, setTrust] = useState("");
+            const [major, setMajor] = useState("");
+            const [loading, setLoading] = useState(false);
+            const [active, setActive] = useState(false);
+
+            const fetchAutoData = async () => {
+                if (!code) return alert("請輸入代號");
+                setLoading(true);
+                try {
+                    const start = new Date(Date.now() - 10 * 86400000).toISOString().split('T')[0];
+                    const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${code}&start_date=${start}`;
+                    const res = await fetch(url);
+                    const json = await res.json();
+                    if (json.data && json.data.length > 0) {
+                        setPrice(json.data[json.data.length - 1].close);
+                        setActive(true);
+                    } else { alert("查無代號"); }
+                } catch (e) { alert("網路錯誤"); }
+                setLoading(false);
             };
 
             return (
                 <div className="container">
-                    <div style={{textAlign: "center", marginBottom: 30}}>
-                        <div className="header-tag">168 FINANCE LAB</div>
-                        <div className="h1">發財強勢股精算系統</div>
+                    <div style={{ textAlign: "center", marginBottom: 30 }}>
+                        <div style={{ display: "inline-block", fontSize: 11, letterSpacing: 3, color: C.pink, border: `1px solid ${C.pink}`, padding: "4px 12px", borderRadius: 20, marginBottom: 12 }}>BUNNY FINANCE</div>
+                        <h1 style={{ margin: 0, fontSize: 28, fontWeight: 900 }}>波浪成本精算系統</h1>
                     </div>
 
-                    <div className="card">
-                        <div className="input-title">📊 核心數據輸入</div>
-                        <input 
-                            placeholder="股票名稱 / 代號 (例: 2330)" 
-                            value={symbol} 
-                            onChange={e => setSymbol(e.target.value)} 
-                        />
-                        <button className="fetch-btn" onClick={fetchStockData} disabled={loading}>
-                            {loading ? "連線抓取中..." : "🚀 開始發財分析"}
-                        </button>
+                    <div style={{ background: C.card, padding: 20, borderRadius: 16, border: `1px solid ${C.border}`, marginBottom: 16 }}>
+                        <div style={{ color: C.pink, fontSize: 13, fontWeight: 700, marginBottom: 15 }}>📊 數據輸入</div>
+                        <input style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, color: C.text, padding: 14, width: "100%", boxSizing: "border-box", marginBottom: 12, fontSize: 16 }} 
+                               placeholder="台股代號 (例: 2330)" value={code} onChange={e => setCode(e.target.value)} />
                         
-                        <div style={{marginTop: 20, display: 'flex', gap: '12px'}}>
-                            <div style={{flex: 1}}>
-                                <div style={{fontSize: 11, color: '#9ca3af', marginBottom: 6}}>當前現價</div>
-                                <input 
-                                    type="number" 
-                                    placeholder="必填" 
-                                    value={price} 
-                                    onChange={e => setPrice(e.target.value)} 
-                                />
+                        <button className="fetch-btn" onClick={fetchAutoData} disabled={loading}>
+                            {loading ? "數據連線中..." : "🚀 抓取即時數據並分析"}
+                        </button>
+
+                        <div style={{ display: "flex", gap: 10, marginTop: 15 }}>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: 11, color: C.dim }}>現價</label>
+                                <input style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text, padding: 10, width: "100%", boxSizing: "border-box" }} type="number" value={price} onChange={e => setPrice(e.target.value)} />
                             </div>
-                            <div style={{flex: 1}}>
-                                <div style={{fontSize: 11, color: '#9ca3af', marginBottom: 6}}>主力成本</div>
-                                <input 
-                                    type="number" 
-                                    placeholder="選填" 
-                                    value={cost} 
-                                    onChange={e => setCost(e.target.value)} 
-                                />
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: 11, color: C.dim }}>外資成本</label>
+                                <input style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text, padding: 10, width: "100%", boxSizing: "border-box" }} type="number" value={foreign} onChange={e => setForeign(e.target.value)} />
+                            </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: 11, color: C.dim }}>投信成本</label>
+                                <input style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text, padding: 10, width: "100%", boxSizing: "border-box" }} type="number" value={trust} onChange={e => setTrust(e.target.value)} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: 11, color: C.dim }}>主力成本</label>
+                                <input style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text, padding: 10, width: "100%", boxSizing: "border-box" }} type="number" value={major} onChange={e => setMajor(e.target.value)} />
                             </div>
                         </div>
                     </div>
 
-                    {renderAnalysis()}
-                    
-                    {!price && !loading && (
-                        <div className="loading-text">請輸入代號並按下按鈕抓取即時數據</div>
+                    {active && (
+                        <div style={{ background: C.card, padding: 20, borderRadius: 16, border: `1px solid ${C.border}` }}>
+                            <div style={{ color: C.pink, fontSize: 13, fontWeight: 700, marginBottom: 15 }}>⏱️ 時機與位階判讀</div>
+                            {foreign && <EntryTimingCard cost={foreign} price={price} label="外資" color={C.blue} />}
+                            {trust && <EntryTimingCard cost={trust} price={price} label="投信" color={C.pink} />}
+                            {major && <EntryTimingCard cost={major} price={price} label="主力" color={C.yellow} />}
+                        </div>
                     )}
                 </div>
             );
