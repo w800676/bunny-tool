@@ -102,9 +102,9 @@ async function fetchFinMindData() {
     btn.textContent = '🚀 FinMind 數據同步中...';
     btn.style.opacity = "0.6";
 
-    // 自動計算日期範圍：確保包含足夠的交易日 (60天)
+    // 自動計算日期範圍：確保包含足夠的交易日 (95天)
     const endDate = new Date().toISOString().split('T')[0];
-    const startDate = new Date(new Date().setDate(new Date().getDate() - 60）).toISOString().split('T')[0];
+    const startDate = new Date(new Date().setDate(new Date().getDate() - 95)).toISOString().split('T')[0];
 
     try {
         const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${ticker}&start_date=${startDate}&end_date=${endDate}&token=${FINMIND_TOKEN}`;
