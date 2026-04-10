@@ -33,9 +33,11 @@ input:focus{border-color:var(--gold);box-shadow: 0 0 8px rgba(245, 200, 66, 0.2)
 .signal-buy{background:rgba(74,222,128,0.15);color:var(--green);border:1px solid var(--green);}
 .signal-sell{background:rgba(248,113,113,0.15);color:var(--red);border:1px solid var(--red);}
 .signal-wait{background:rgba(245,200,66,0.1);color:var(--gold);border:1px solid var(--gold);}
-.fib-table{width:100%;border-collapse:separate;border-spacing:0 4px;font-family:monospace;font-size:12px;}
-.fib-table td{padding:8px 10px;background:var(--surface);}
+.fib-table{width:100%;border-collapse:separate;border-spacing:0 4px;font-family:monospace;font-size:12px;width:100%;}
+.fib-table td, .fib-table th{padding:10px;background:var(--surface);text-align:left;}
 #results{display:none;}
+.loading-spinner { display: none; margin-left: 8px; border: 2px solid #f3f3f3; border-top: 2px solid var(--gold); border-radius: 50%; width: 12px; height: 12px; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -43,30 +45,31 @@ input:focus{border-color:var(--gold);box-shadow: 0 0 8px rgba(245, 200, 66, 0.2)
 <div class="header">
   <div class="tag">💰 Fortune Trading System</div>
   <h1>發財強勢股精算系統</h1>
-  <p class="sub">波浪進場策略 × 斐波那契共振分析</p>
+  <p class="sub">波浪進場策略 × 完整斐波那契分析</p>
 </div>
 
 <div class="section">
   <div class="section-title">🔍 數據自動抓取</div>
   <div class="input-group">
-    <label>股票代號 (台股加 .TW)</label>
-    <input type="text" id="ticker" placeholder="e.g. 3481.TW" style="text-transform:uppercase">
+    <label>股票代號 (台股加 .TW，例：3481.TW)</label>
+    <input type="text" id="ticker" placeholder="輸入代號" style="text-transform:uppercase">
   </div>
   <button class="btn-auto" id="btnAuto" onclick="fetchStockData()">
-    📡 抓取近 90 天數據
+    <span id="btnText">📡 抓取近 90 天數據</span>
+    <div id="spinner" class="loading-spinner"></div>
   </button>
 </div>
 
 <div class="section">
   <div class="section-title">📊 核心數據</div>
   <div class="input-grid" style="margin-bottom:12px;">
-    <div class="input-group"><label>當前股價</label><input type="number" id="price" step="0.1"></div>
-    <div class="input-group"><label>90D 低點</label><input type="number" id="fibLow" step="0.1"></div>
-    <div class="input-group"><label>90D 高點</label><input type="number" id="fibHigh" step="0.1"></div>
+    <div class="input-group"><label>當前股價</label><input type="number" id="price" step="0.01"></div>
+    <div class="input-group"><label>90D 低點</label><input type="number" id="fibLow" step="0.01"></div>
+    <div class="input-group"><label>90D 高點</label><input type="number" id="fibHigh" step="0.01"></div>
   </div>
   <div style="display:flex;flex-direction:column;gap:8px;">
-    <div class="cost-row"><span class="cost-label">外資成本</span><input class="cost-input" type="number" id="foreign" step="0.1"></div>
-    <div class="cost-row"><span class="cost-label">投信成本</span><input class="cost-input" type="number" id="trust" step="0.1"></div>
+    <div class="cost-row"><span class="cost-label">外資成本</span><input class="cost-input" type="number" id="foreign" step="0.01" placeholder="手動輸入"></div>
+    <div class="cost-row"><span class="cost-label">投信成本</span><input class="cost-input" type="number" id="trust" step="0.01" placeholder="手動輸入"></div>
   </div>
 </div>
 
@@ -76,7 +79,7 @@ input:focus{border-color:var(--gold);box-shadow: 0 0 8px rgba(245, 200, 66, 0.2)
   <div class="section" id="signalSummary"></div>
   
   <div class="section">
-    <div class="section-title">📐 斐波那契進出場判定</div>
+    <div class="section-title">📐 斐波那契全位階分析</div>
     <table class="fib-table" id="fibTable"></table>
   </div>
 
@@ -86,19 +89,39 @@ input:focus{border-color:var(--gold);box-shadow: 0 0 8px rgba(245, 200, 66, 0.2)
 <script>
 async function fetchStockData() {
     const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+    const btnText = document.getElementById('btnText');
+    const spinner = document.getElementById('spinner');
+    
     if (!ticker) return alert('請輸入代號');
+    
+    btnText.textContent = '抓取中...';
+    spinner.style.display = 'inline-block';
+
     try {
         const endDate = Math.floor(Date.now()/1000);
         const startDate = endDate - 90*24*3600;
+        // 使用更穩定的 AllOrigins 代理
         const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?period1=${startDate}&period2=${endDate}&interval=1d`)}`);
-        const data = await res.json();
-        const parsed = JSON.parse(data.contents).chart.result[0];
-        const quotes = parsed.indicators.quote[0];
-        const closes = quotes.close.filter(v => v != null);
+        const json = await res.json();
+        const data = JSON.parse(json.contents);
+        
+        const result = data.chart.result[0];
+        const quote = result.indicators.quote[0];
+        const closes = quote.close.filter(v => v != null);
+        const highs = quote.high.filter(v => v != null);
+        const lows = quote.low.filter(v => v != null);
+
         document.getElementById('price').value = closes[closes.length-1].toFixed(2);
-        document.getElementById('fibHigh').value = Math.max(...quotes.high.filter(v=>v!=null)).toFixed(2);
-        document.getElementById('fibLow').value = Math.min(...quotes.low.filter(v=>v!=null)).toFixed(2);
-    } catch (e) { alert('抓取失敗'); }
+        document.getElementById('fibHigh').value = Math.max(...highs).toFixed(2);
+        document.getElementById('fibLow').value = Math.min(...lows).toFixed(2);
+        alert('數據抓取成功！');
+    } catch (e) {
+        console.error(e);
+        alert('抓取失敗，可能是 API 限制或代號錯誤。請稍後再試或手動輸入價格。');
+    } finally {
+        btnText.textContent = '📡 抓取近 90 天數據';
+        spinner.style.display = 'none';
+    }
 }
 
 function runAnalysis() {
@@ -108,65 +131,76 @@ function runAnalysis() {
     const fCost = parseFloat(document.getElementById('foreign').value) || 0;
     const tCost = parseFloat(document.getElementById('trust').value) || 0;
 
-    if (!price || !hi || !lo) return alert('請確保數據完整');
+    if (!price || !hi || !lo) return alert('請填寫完整股價與高低點');
     document.getElementById('results').style.display = 'block';
 
     const range = hi - lo;
+    // 完整斐波那契位階
     const fibLevels = [
-        {r: 0, l: '起漲點'}, {r: 0.382, l: '支撐位'}, 
-        {r: 0.5, l: '中軸線'}, {r: 0.618, l: '黃金回調'}, {r: 1, l: '壓力高點'}
+        {r: 0, l: '起漲低點 (0%)'},
+        {r: 0.236, l: '初步支撐 (23.6%)'},
+        {r: 0.382, l: '強勢回調 (38.2%)'},
+        {r: 0.5, l: '多空分界 (50%)'},
+        {r: 0.618, l: '黃金分割 (61.8%)'},
+        {r: 0.786, l: '深層回測 (78.6%)'},
+        {r: 1, l: '波段高點 (100%)'},
+        {r: 1.272, l: '多頭延伸 (127.2%)'},
+        {r: 1.618, l: '獲利目標 (161.8%)'}
     ];
     
-    // 斐波那契進場判斷
-    let fibHTML = `<tr><th>關卡</th><th>價格</th><th>判斷</th></tr>`;
+    let fibHTML = `<tr><th>位階</th><th>價格</th><th>信號</th></tr>`;
     fibLevels.forEach(lvl => {
-        const lvlP = +(hi - range * (1 - lvl.r)).toFixed(2);
-        let note = price > lvlP ? '現價之上' : '現價之下';
-        if (Math.abs(price - lvlP) / price < 0.015) note = '⭐ 進場觀測區';
-        fibHTML += `<tr><td style="color:var(--gold)">${lvl.l}</td><td>$${lvlP}</td><td style="color:${note.includes('⭐')?'var(--green)':'var(--dim)'}">${note}</td></tr>`;
+        const lvlP = +(lo + range * lvl.r).toFixed(2);
+        const dist = Math.abs(price - lvlP) / price;
+        let signal = dist < 0.015 ? '<span style="color:var(--green)">⭐ 共振點</span>' : (price > lvlP ? '↑' : '↓');
+        fibHTML += `<tr><td style="color:var(--gold)">${lvl.l}</td><td>$${lvlP}</td><td>${signal}</td></tr>`;
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    // 波浪進場判斷 (1.04 突破, 1.2/1.4/1.7 獲利)
-    let waveHTML = `<div class="section-title">🌊 波浪進出場信號</div>`;
-    const mainCost = tCost || fCost; // 優先選投信，無則選外資
+    // 波浪進場邏輯
+    let waveHTML = `<div class="section-title">🌊 波浪精算判定</div>`;
+    const mainCost = tCost || fCost;
     if (mainCost) {
         const bPoint = (mainCost * 1.04).toFixed(2);
-        const t1 = (mainCost * 1.2).toFixed(2);
-        const t2 = (mainCost * 1.4).toFixed(2);
+        const target1 = (mainCost * 1.2).toFixed(2);
+        const target2 = (mainCost * 1.4).toFixed(2);
+        const target3 = (mainCost * 1.7).toFixed(2);
         
-        let signalClass = 'signal-wait';
-        let signalText = '尚未觸發突破訊號';
+        let msg = '';
+        let cls = 'signal-wait';
         
-        if (price >= bPoint && price < t1) {
-            signalClass = 'signal-buy';
-            signalText = `🚀 已突破法人成本(1.04)：$${bPoint}，建議佈局。`;
-        } else if (price >= t1 && price < t2) {
-            signalClass = 'signal-wait';
-            signalText = `👀 抵達第一目標(1.2)：$${t1}，等待盤整或噴發。`;
-        } else if (price >= t2) {
-            signalClass = 'signal-sell';
-            signalText = `💰 抵達第二目標(1.4)：$${t2}，分批獲利入袋。`;
+        if (price < mainCost) {
+            msg = '💎 處於成本區下方：收貨期。';
+        } else if (price >= mainCost && price < bPoint) {
+            msg = '⏳ 成本區震盪：等待 1.04 突破。';
+        } else if (price >= bPoint && price < target1) {
+            msg = '🚀 突破 1.04：主升段啟動！建議進場。';
+            cls = 'signal-buy';
+        } else if (price >= target1 && price < target2) {
+            msg = '📈 抵達 1.2 目標：強勢持股，注意噴發。';
+        } else if (price >= target2) {
+            msg = '💰 抵達 1.4 以上：滿足區，分批入袋。';
+            cls = 'signal-sell';
         }
-        
-        waveHTML += `<div class="signal-box ${signalClass}">${signalText}</div>
-            <div style="font-size:12px; margin-top:10px; color:var(--dim); line-height:1.6;">
-                • 法人成本突破點：$${bPoint}<br>
-                • 波段獲利區：$${t1} ~ $${t2}
+
+        waveHTML += `<div class="signal-box ${cls}">${msg}</div>
+            <div style="font-size:12px; margin-top:12px; color:var(--dim); line-height:1.8;">
+                • 法人成本突破：$${bPoint}<br>
+                • 第一目標(1.2)：$${target1}<br>
+                • 第二目標(1.4)：$${target2}<br>
+                • 最終目標(1.7)：$${target3}
             </div>`;
     } else {
-        waveHTML += `<div class="signal-box signal-wait">請輸入法人成本以分析波浪</div>`;
+        waveHTML += `<div class="signal-box signal-wait">請輸入法人成本以分析波浪階段</div>`;
     }
     document.getElementById('waveOutput').innerHTML = waveHTML;
 
-    // 總結卡片
-    const isFibBuy = Math.abs(price - (hi - range * 0.382)) / price < 0.02 || Math.abs(price - (hi - range * 0.4)) / price < 0.02;
     document.getElementById('signalSummary').innerHTML = `
-        <div class="section-title">🏮 綜合精算結果</div>
-        <div style="text-align:center;">
-            <div style="font-size:32px; margin:10px 0;">${price >= (mainCost*1.04) ? '💹' : '💤'}</div>
-            <div style="color:var(--gold); font-weight:900; font-size:18px;">
-                ${price >= (mainCost*1.04) ? '強勢多頭趨勢' : '量縮築底階段'}
+        <div class="section-title">🏮 發財分析總結</div>
+        <div style="text-align:center; padding:10px;">
+            <div style="font-size:36px;">${price > hi ? '🔥' : '📈'}</div>
+            <div style="color:var(--gold); font-weight:900; font-size:18px; margin-top:8px;">
+                ${price > hi ? '開啟噴發模式' : '高位震盪蓄力'}
             </div>
         </div>
     `;
