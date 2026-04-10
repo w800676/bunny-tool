@@ -30,7 +30,6 @@
   /* 卡片設計 */
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
   .card-title { font-size: 13px; font-weight: 700; color: var(--accent-gold); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
-  .card-title i { opacity: 0.8; }
 
   /* 輸入框樣式 */
   .input-group { margin-bottom: 15px; }
@@ -75,10 +74,10 @@
 </div>
 
 <div class="card">
-  <div class="card-title">📡 數據抓取連動</div>
+  <div class="card-title">📡 數據抓取連動 (3個月區間)</div>
   <div class="input-group">
     <label class="input-label">股票代號</label>
-    <input type="text" id="ticker" placeholder="輸入 4 位代號，如 2330">
+    <input type="text" id="ticker" placeholder="輸入代號，如 3481">
   </div>
   <button class="btn-fetch" id="btnFetch" onclick="fetchStockData()">📡 啟動雲端自動抓取</button>
 
@@ -104,19 +103,16 @@
 
   <div class="card">
     <div class="card-title">📐 斐波那契進出場判斷</div>
-    <table class="fib-table" id="fibTable">
-      </table>
+    <table class="fib-table" id="fibTable"></table>
   </div>
 
   <div class="card">
     <div class="card-title">🌊 法人波浪目標位</div>
-    <div class="target-grid" id="waveTargets">
-      </div>
+    <div class="target-grid" id="waveTargets"></div>
   </div>
 </div>
 
 <script>
-// --- 整合後的資料抓取邏輯 ---
 async function fetchStockData() {
     let t = document.getElementById('ticker').value.trim().toUpperCase();
     if (!t) return alert('請輸入股票代號');
@@ -132,7 +128,8 @@ async function fetchStockData() {
     btn.classList.add('loading');
 
     try {
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${t}?interval=1d&range=6mo`;
+        // 修正為 3 個月區間 (3mo)，提升抓取成功率
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${t}?interval=1d&range=3mo`;
         const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
         
         const response = await fetch(proxyUrl);
@@ -143,6 +140,7 @@ async function fetchStockData() {
         const indicators = result.indicators.quote[0];
         const prices = result.indicators.adjclose[0].adjclose; 
 
+        // 濾除無效數據並抓取波段高低點
         const validHighs = indicators.high.filter(v => v !== null);
         const validLows = indicators.low.filter(v => v !== null);
         const currentPrice = prices[prices.length - 1];
@@ -162,7 +160,8 @@ async function fetchStockData() {
         }, 2000);
 
     } catch (e) {
-        alert('❌ 抓取失敗，建議手動輸入數據或確認代號 (如: 2313.TW)');
+        console.error(e);
+        alert('❌ 抓取失敗：請檢查代號是否正確（例如 3481.TW），或稍後再試。');
         btn.textContent = '❌ 抓取失敗';
         setTimeout(() => { 
             btn.textContent = originalText; 
@@ -171,14 +170,13 @@ async function fetchStockData() {
     }
 }
 
-// --- 核心精算邏輯 ---
 function runAnalysis() {
     const p = parseFloat(document.getElementById('price').value);
     const hi = parseFloat(document.getElementById('high').value);
     const lo = parseFloat(document.getElementById('low').value);
     const cost = parseFloat(document.getElementById('cost').value);
     
-    if (!p || !hi || !lo) return alert('核心價格數據不足');
+    if (!p || !hi || !lo) return alert('數據不足');
     document.getElementById('analysisResult').style.display = 'block';
 
     const range = hi - lo;
@@ -209,7 +207,6 @@ function runAnalysis() {
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    // 法人波浪計算 (1.04 / 1.2 / 1.4)
     if (cost) {
         const t1 = cost * 1.04;
         const t2 = cost * 1.2;
@@ -220,22 +217,21 @@ function runAnalysis() {
             <div class="target-item"><div class="target-label">目標二 1.40</div><div class="target-val" style="color:var(--accent-red)">$${t3.toFixed(2)}</div></div>
         `;
     } else {
-        document.getElementById('waveTargets').innerHTML = '<p style="color:var(--text-muted); font-size:12px; grid-column: 1/4;">輸入法人成本解鎖波浪目標</p>';
+        document.getElementById('waveTargets').innerHTML = '<p style="color:var(--text-muted); font-size:12px; grid-column: 1/4;">輸入法人成本顯示目標</p>';
     }
 
-    // 總結判定
     let sig = "區間觀察"; let emj = "⚖️"; let clr = "var(--accent-gold)";
     let reason = "目前股價在區間內震盪，建議守穩黃金比例 61.8% 附近再行進場。";
 
     if (p >= hi) {
         sig = "強勢噴發"; emj = "🚀"; clr = "var(--accent-green)";
-        reason = "股價已突破波段高點，進入 1.618 延伸段。只要不破前高，發財波持續。";
+        reason = "股價已突破波段高點，進入延伸段。只要不破前高，發財波持續。";
     } else if (p < lo) {
         sig = "趨勢轉空"; emj = "🛑"; clr = "var(--accent-red)";
-        reason = "跌破起漲點，空頭力量強大，請守好錢包，切勿伸手接刀。";
+        reason = "跌破起漲點，空頭力量強大，建議先觀望，切勿伸手接刀。";
     } else if (cost && p > cost * 1.04) {
         sig = "法人抬頭"; emj = "💰"; clr = "var(--accent-purple)";
-        reason = "現價站上法人成本 1.04 倍突破點，具備共振動能，看好 1.2 倍目標位。";
+        reason = "現價站上法人成本突破點，具備共振動能，看好後續目標位。";
     }
 
     document.getElementById('resEmoji').textContent = emj;
