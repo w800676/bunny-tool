@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fortune Stock 精算系統</title>
+<title>Fortune Stock FinMind 版</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -18,87 +18,65 @@
     --text-main: #f5f5f5;
     --text-muted: #8a8f9d;
   }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: var(--bg); color: var(--text-main); font-family: 'Noto Sans TC', sans-serif; padding: 20px 15px 80px; }
-
-  /* 頂部標題 */
-  .app-header { text-align: center; margin-bottom: 25px; }
+  .app-header { text-align: center; margin-bottom: 20px; }
   .app-header h1 { font-size: 24px; font-weight: 900; background: linear-gradient(to right, #fff, var(--accent-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   .app-header p { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
 
-  /* 卡片設計 */
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
   .card-title { font-size: 13px; font-weight: 700; color: var(--accent-gold); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
-
-  /* 輸入框樣式 */
-  .input-group { margin-bottom: 15px; }
+  
   .input-label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
   input { background: #0b0d11; border: 1px solid var(--border); border-radius: 10px; color: var(--accent-gold); font-family: 'DM Mono', monospace; font-size: 16px; padding: 12px; width: 100%; outline: none; transition: 0.3s; }
   input:focus { border-color: var(--accent-gold); box-shadow: 0 0 10px rgba(245,200,66,0.1); }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  
+  .btn-fetch { width: 100%; background: #1a1e26; border: 1px dashed var(--accent-gold); border-radius: 12px; color: var(--accent-gold); padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 15px 0; transition: 0.3s; }
+  .btn-fetch:active { transform: scale(0.98); }
+  .btn-analyze { width: 100%; background: linear-gradient(135deg, #f5c842, #d4a72d); border: none; border-radius: 14px; color: #000; padding: 16px; font-size: 16px; font-weight: 900; letter-spacing: 2px; cursor: pointer; }
 
-  /* 按鈕樣式 */
-  .btn-fetch { width: 100%; background: #1a1e26; border: 1px dashed var(--accent-gold); border-radius: 12px; color: var(--accent-gold); padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; margin-bottom: 15px; transition: 0.3s; }
-  .btn-fetch.loading { opacity: 0.6; pointer-events: none; }
-  .btn-analyze { width: 100%; background: linear-gradient(135deg, #f5c842, #d4a72d); border: none; border-radius: 14px; color: #000; padding: 16px; font-size: 16px; font-weight: 900; letter-spacing: 2px; cursor: pointer; margin-top: 10px; }
-
-  /* 判定面板 */
-  .status-box { text-align: center; padding: 30px 20px; border-radius: 20px; background: radial-gradient(circle at top, #252a36, #1c2029); border: 1px solid var(--accent-gold); margin-bottom: 20px; }
-  .status-emoji { font-size: 48px; margin-bottom: 10px; }
-  .status-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
-  .status-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; text-align: left; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px; }
-
-  /* 數據表格 */
-  .fib-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; }
+  .status-box { text-align: center; padding: 25px; border-radius: 20px; border: 1px solid var(--accent-gold); background: radial-gradient(circle at top, #252a36, #1c2029); margin-bottom: 20px; }
+  .fib-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 13px; }
   .fib-table tr { border-bottom: 1px solid var(--border); }
-  .fib-table td { padding: 14px 8px; font-size: 13px; }
-  .fib-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); color: var(--text-muted); }
+  .fib-table td { padding: 14px 8px; }
   .price-text { font-weight: 700; color: var(--text-main); }
-  .status-tag { font-size: 11px; font-weight: 700; }
-
-  /* 目標區塊 */
   .target-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; }
   .target-item { background: #0b0d11; padding: 12px 5px; border-radius: 12px; border: 1px solid var(--border); }
   .target-label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
   .target-val { font-size: 14px; font-weight: 700; color: var(--accent-gold); }
-
-  #analysisResult { display: none; }
 </style>
 </head>
 <body>
 
 <div class="app-header">
-  <p>FIBONACCI × WAVE SYSTEM</p>
-  <h1>發財強勢股精算</h1>
+  <p>PROFESSIONAL FINMIND SYSTEM</p>
+  <h1>發財強勢股精算 3.0</h1>
 </div>
 
 <div class="card">
-  <div class="card-title">📡 數據抓取連動 (3個月區間)</div>
-  <div class="input-group">
-    <label class="input-label">股票代號</label>
-    <input type="text" id="ticker" placeholder="輸入代號，如 3481">
-  </div>
-  <button class="btn-fetch" id="btnFetch" onclick="fetchStockData()">📡 啟動雲端自動抓取</button>
+  <div class="card-title">📡 數據自動抓取 (FinMind 介接)</div>
+  <label class="input-label">股票代號 (如: 2330)</label>
+  <input type="text" id="ticker" placeholder="輸入 4 位台股代號">
+  
+  <button class="btn-fetch" id="btnFetch" onclick="fetchFinMindData()">📡 啟動專業 API 抓取</button>
 
-  <div class="grid-2">
-    <div class="input-group"><label class="input-label">當前現價</label><input type="number" id="price" step="0.01"></div>
-    <div class="input-group"><label class="input-label">法人成本</label><input type="number" id="cost" step="0.01" placeholder="外資或投信"></div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+    <div><label class="input-label">當前現價</label><input type="number" id="price" step="0.01"></div>
+    <div><label class="input-label">法人成本</label><input type="number" id="cost" step="0.01" placeholder="外資或投信"></div>
   </div>
-  <div class="grid-2">
-    <div class="input-group"><label class="input-label">波段低點 (0%)</label><input type="number" id="low" step="0.01"></div>
-    <div class="input-group"><label class="input-label">波段高點 (100%)</label><input type="number" id="high" step="0.01"></div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+    <div><label class="input-label">波段低點 (3個月)</label><input type="number" id="low" step="0.01"></div>
+    <div><label class="input-label">波段高點 (3個月)</label><input type="number" id="high" step="0.01"></div>
   </div>
 
-  <button class="btn-analyze" onclick="runAnalysis()">🧧 開始發財精算</button>
+  <button class="btn-analyze" style="margin-top:20px;" onclick="runAnalysis()">🧧 開始發財精算</button>
 </div>
 
-<div id="analysisResult">
+<div id="analysisResult" style="display:none;">
   <div class="status-box" id="statusBox">
-    <div class="status-emoji" id="resEmoji">⌛</div>
-    <div class="status-title" id="resSignal">等待精算中</div>
-    <div id="resAction" style="font-size: 14px; color: var(--accent-gold); margin-bottom: 15px; font-weight: 700;">--</div>
-    <div class="status-desc" id="resReason"></div>
+    <div id="resEmoji" style="font-size:48px; margin-bottom:10px;">⌛</div>
+    <div id="resSignal" style="font-size:24px; font-weight:900;">--</div>
+    <div id="resReason" style="font-size:12px; color:var(--text-muted); margin-top:10px; line-height:1.6; text-align:left; background:rgba(0,0,0,0.2); padding:12px; border-radius:10px;"></div>
   </div>
 
   <div class="card">
@@ -113,60 +91,55 @@
 </div>
 
 <script>
-async function fetchStockData() {
-    let t = document.getElementById('ticker').value.trim().toUpperCase();
-    if (!t) return alert('請輸入股票代號');
-    
-    if (!t.includes('.') && t.length >= 4) {
-        t += '.TW';
-        document.getElementById('ticker').value = t;
-    }
-    
+// 已自動帶入您的 FinMind API 金鑰
+const FINMIND_TOKEN = "a603912198084774880560a87f259620";
+
+async function fetchFinMindData() {
+    const ticker = document.getElementById('ticker').value.trim();
+    if (!ticker) return alert('請輸入股票代號');
+
     const btn = document.getElementById('btnFetch');
-    const originalText = btn.textContent;
-    btn.textContent = '🧧 正在求籤(抓取中)...';
-    btn.classList.add('loading');
+    btn.textContent = '🚀 FinMind 數據同步中...';
+    btn.style.opacity = "0.6";
+
+    // 自動計算日期範圍：確保包含足夠的交易日 (95天)
+    const endDate = new Date().toISOString().split('T')[0];
+    const startDate = new Date(new Date().setDate(new Date().getDate() - 95)).toISOString().split('T')[0];
 
     try {
-        // 修正為 3 個月區間 (3mo)，提升抓取成功率
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${t}?interval=1d&range=3mo`;
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-        
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('網路回應不佳');
-        
-        const data = await response.json();
-        const result = data.chart.result[0];
-        const indicators = result.indicators.quote[0];
-        const prices = result.indicators.adjclose[0].adjclose; 
+        const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${ticker}&start_date=${startDate}&end_date=${endDate}&token=${FINMIND_TOKEN}`;
 
-        // 濾除無效數據並抓取波段高低點
-        const validHighs = indicators.high.filter(v => v !== null);
-        const validLows = indicators.low.filter(v => v !== null);
-        const currentPrice = prices[prices.length - 1];
+        const response = await fetch(url);
+        const json = await response.json();
 
-        document.getElementById('high').value = Math.max(...validHighs).toFixed(2);
-        document.getElementById('low').value = Math.min(...validLows).toFixed(2);
-        document.getElementById('price').value = currentPrice.toFixed(2);
+        if (json.status !== 200 || !json.data || json.data.length === 0) {
+            throw new Error('查無數據或代號錯誤');
+        }
+
+        const data = json.data;
+        const currentPrice = data[data.length - 1].close;
+        const allHighs = data.map(d => d.max);
+        const allLows = data.map(d => d.min);
+
+        document.getElementById('price').value = currentPrice;
+        document.getElementById('high').value = Math.max(...allHighs).toFixed(2);
+        document.getElementById('low').value = Math.min(...allLows).toFixed(2);
         
-        btn.textContent = '✅ 抓取成功';
+        btn.textContent = '✅ 專業同步成功';
         btn.style.background = 'var(--accent-green)';
         btn.style.color = '#000';
+        btn.style.opacity = "1";
         setTimeout(() => { 
-            btn.textContent = originalText; 
+            btn.textContent = '📡 啟動專業 API 抓取'; 
             btn.style.background = '';
             btn.style.color = '';
-            btn.classList.remove('loading'); 
         }, 2000);
 
     } catch (e) {
         console.error(e);
-        alert('❌ 抓取失敗：請檢查代號是否正確（例如 3481.TW），或稍後再試。');
-        btn.textContent = '❌ 抓取失敗';
-        setTimeout(() => { 
-            btn.textContent = originalText; 
-            btn.classList.remove('loading'); 
-        }, 2000);
+        alert('❌ 抓取失敗：請檢查代號是否正確，或確認 API Token 額度。');
+        btn.textContent = '❌ 同步失敗';
+        btn.style.opacity = "1";
     }
 }
 
@@ -176,7 +149,7 @@ function runAnalysis() {
     const lo = parseFloat(document.getElementById('low').value);
     const cost = parseFloat(document.getElementById('cost').value);
     
-    if (!p || !hi || !lo) return alert('數據不足');
+    if (!p || !hi || !lo) return alert('核心價格數據不足');
     document.getElementById('analysisResult').style.display = 'block';
 
     const range = hi - lo;
@@ -186,21 +159,21 @@ function runAnalysis() {
         { r: 0.5, l: "50.0%", role: "多空分界" },
         { r: 0.618, l: "61.8%", role: "黃金比例" },
         { r: 0.786, l: "78.6%", role: "深層回測" },
-        { r: 1, l: "100.0%", role: "波段高點" },
+        { r: 1, l: "波段高點", role: "短線壓力" },
         { r: 1.618, l: "161.8%", role: "噴發目標" }
     ];
 
     let fibHTML = "";
     fibRatios.forEach(f => {
-        const val = f.r <= 1 ? (hi - range * f.r) : (hi + range * (f.r - 1));
+        const val = f.r <= 1 ? (hi - range * (1 - f.r)) : (hi + range * (f.r - 1));
         const diff = Math.abs(p - val) / p;
         const isNear = diff < 0.015;
         
         fibHTML += `
             <tr>
-                <td><span class="fib-tag">${f.l}</span><br>${f.role}</td>
+                <td><span style="font-size:10px; color:var(--text-muted)">${f.l}</span><br>${f.role}</td>
                 <td class="price-text">$${val.toFixed(2)}</td>
-                <td class="status-tag" style="color:${isNear ? 'var(--accent-green)' : 'var(--text-muted)'}">
+                <td style="color:${isNear ? 'var(--accent-green)' : (p > val ? 'var(--accent-red)' : 'var(--text-muted)')}">
                     ${isNear ? '🎯 價格在此' : (p > val ? '▲ 支撐' : '▼ 壓力')}
                 </td>
             </tr>`;
@@ -221,17 +194,17 @@ function runAnalysis() {
     }
 
     let sig = "區間觀察"; let emj = "⚖️"; let clr = "var(--accent-gold)";
-    let reason = "目前股價在區間內震盪，建議守穩黃金比例 61.8% 附近再行進場。";
+    let reason = "目前股價在三個月區間內震盪。技術分析顯示，應優先守穩 61.8% 附近支撐再考慮擴大部位。";
 
     if (p >= hi) {
         sig = "強勢噴發"; emj = "🚀"; clr = "var(--accent-green)";
-        reason = "股價已突破波段高點，進入延伸段。只要不破前高，發財波持續。";
+        reason = "股價已成功站上波段高點！若量能持續，預計開啟新一波「發財行情」，挑戰 1.618 翻倍目標。";
     } else if (p < lo) {
         sig = "趨勢轉空"; emj = "🛑"; clr = "var(--accent-red)";
-        reason = "跌破起漲點，空頭力量強大，建議先觀望，切勿伸手接刀。";
+        reason = "目前跌破三個月支撐點，空頭力道強勁。建議保持現金水位，切勿在此盲目接刀。";
     } else if (cost && p > cost * 1.04) {
         sig = "法人抬頭"; emj = "💰"; clr = "var(--accent-purple)";
-        reason = "現價站上法人成本突破點，具備共振動能，看好後續目標位。";
+        reason = "現價已站上法人成本突破點（1.04 倍），顯示主力有拉抬意願，具備共振動能。";
     }
 
     document.getElementById('resEmoji').textContent = emj;
