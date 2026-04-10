@@ -3,143 +3,161 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>發財強勢股精算系統｜Fortune Pro</title>
+<title>發財強勢股精算系統｜Fortune Gold</title>
 <style>
 :root {
-  --bg:#0d0f14; --surface:#161921; --card:#1c2030; --border:#3d341a;
+  --bg:#0d0f14; --surface:#12151c; --card:#181c26; --border:#3d341a;
   --gold:#f5c842; --green:#4ade80; --red:#f87171; --text:#f5eec8; --muted:#857f61; --dim:#a39e7e;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;min-height:100vh;padding:20px 16px 60px;}
 .header{text-align:center;margin-bottom:28px;}
-h1{font-size:26px;font-weight:900;background:linear-gradient(135deg,#fff,var(--gold),#ff9d4d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
-.section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:14px;}
+.tag{display:inline-block;font-size:11px;letter-spacing:3px;color:var(--gold);border:1px solid var(--gold);padding:4px 14px;border-radius:20px;margin-bottom:12px;text-transform:uppercase;}
+h1{font-size:28px;font-weight:900;background:linear-gradient(135deg,#fff,var(--gold),#ff9d4d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+.section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:14px;box-shadow: 0 4px 20px rgba(0,0,0,0.4);}
 .section-title{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
 .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
-.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
 .input-group{display:flex;flex-direction:column;gap:5px;}
 .input-group label{font-size:11px;color:var(--muted);}
-input{background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--gold);font-family:monospace;font-size:15px;padding:12px;outline:none;width:100%;}
-input:focus{border-color:var(--gold);}
-.btn-main{width:100%;background:linear-gradient(135deg,var(--gold),#ff9d4d);border:none;border-radius:14px;color:#000;font-size:16px;font-weight:900;padding:18px;cursor:pointer;margin-top:10px;letter-spacing:2px;box-shadow: 0 4px 15px rgba(245,200,66,0.3);}
-.fib-table{width:100%;border-collapse:separate;border-spacing:0 4px;font-family:monospace;font-size:12px;}
-.fib-table td{padding:12px 10px;background:var(--surface);}
-.signal-box{padding:15px;border-radius:12px;margin-top:10px;font-size:14px;font-weight:700;text-align:center;line-height:1.5;border:1px solid var(--gold);}
-.buy { color: var(--green); border-color: var(--green); background: rgba(74,222,128,0.05); }
-.sell { color: var(--red); border-color: var(--red); background: rgba(248,113,113,0.05); }
+input{background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--gold);font-family:monospace;font-size:16px;padding:12px;outline:none;width:100%;}
+input:focus{border-color:var(--gold);box-shadow: 0 0 10px rgba(245,200,66,0.2);}
+.btn-auto{width:100%;background:var(--surface);border:1px solid var(--gold)88;border-radius:12px;color:var(--gold);font-size:14px;font-weight:700;padding:14px;cursor:pointer;margin-top:10px;transition:0.3s;}
+.btn-main{width:100%;background:linear-gradient(135deg,var(--gold),#ff9d4d);border:none;border-radius:14px;color:#000;font-size:18px;font-weight:900;padding:18px;cursor:pointer;margin-top:12px;letter-spacing:4px;box-shadow: 0 4px 15px rgba(245,200,66,0.3);}
+.fib-table{width:100%;border-collapse:separate;border-spacing:0 4px;font-family:monospace;font-size:13px;}
+.fib-table td{padding:12px 10px;background:var(--surface);border-bottom:1px solid #1e222d;}
+.signal-card{padding:20px;border-radius:16px;text-align:center;margin-bottom:14px;border:1px solid var(--gold);background:rgba(245,200,66,0.05);}
+.buy { color: var(--green); border-color: var(--green); background: rgba(74,222,128,0.08); }
+.sell { color: var(--red); border-color: var(--red); background: rgba(248,113,113,0.08); }
 #results{display:none;}
 </style>
 </head>
 <body>
 
 <div class="header">
+  <div class="tag">Fortune Pro System</div>
   <h1>發財強勢股精算系統</h1>
-  <p style="color:var(--muted); font-size:12px;">斐波那契進出場判斷 × 波浪精算</p>
+  <p style="color:var(--muted); font-size:12px;">斐波那契進出場判定 × 波浪精算</p>
 </div>
 
 <div class="section">
-  <div class="section-title">📊 核心價格數據 (可手動填寫)</div>
+  <div class="section-title">📊 核心數據輸入</div>
   <div class="input-grid">
-    <div class="input-group"><label>當前現價</label><input type="number" id="price" step="0.01" placeholder="必填"></div>
-    <div class="input-group"><label>法人成本</label><input type="number" id="cost" step="0.01" placeholder="必填"></div>
-    <div class="input-group"><label>90D 低點</label><input type="number" id="fibLow" step="0.01" placeholder="必填"></div>
-    <div class="input-group"><label>90D 高點</label><input type="number" id="fibHigh" step="0.01" placeholder="必填"></div>
+    <div class="input-group"><label>當前股價</label><input type="number" id="price" step="0.01" placeholder="現價"></div>
+    <div class="input-group"><label>法人成本</label><input type="number" id="cost" step="0.01" placeholder="成本"></div>
+    <div class="input-group"><label>90D 最低</label><input type="number" id="fibLow" step="0.01" placeholder="低點"></div>
+    <div class="input-group"><label>90D 最高</label><input type="number" id="fibHigh" step="0.01" placeholder="高點"></div>
   </div>
+  <button class="btn-auto" onclick="fetchStockData()">📡 嘗試自動抓取 (Yahoo Finance)</button>
 </div>
 
-<button class="btn-main" onclick="runAnalysis()">🧧 產出進出場判斷</button>
+<button class="btn-main" onclick="runAnalysis()">🧧 產出進出場分析</button>
 
 <div id="results">
-  <div class="section" id="mainSignal"></div>
+  <div id="mainSignalArea"></div>
 
   <div class="section">
-    <div class="section-title">📐 斐波那契進場觀測點</div>
+    <div class="section-title">📐 斐波那契進場觀測</div>
     <table class="fib-table" id="fibTable"></table>
   </div>
 
-  <div class="section" id="waveOutput"></div>
+  <div class="section" id="waveDetails"></div>
 </div>
 
 <script>
+async function fetchStockData() {
+    const ticker = prompt("請輸入股票代號 (例: 3481.TW):");
+    if (!ticker) return;
+    try {
+        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker.toUpperCase()}?range=3mo&interval=1d`)}`);
+        const json = await res.json();
+        const data = JSON.parse(json.contents).chart.result[0];
+        const quote = data.indicators.quote[0];
+        const closes = quote.close.filter(v => v != null);
+        document.getElementById('price').value = closes[closes.length-1].toFixed(2);
+        document.getElementById('fibHigh').value = Math.max(...quote.high.filter(v=>v!=null)).toFixed(2);
+        document.getElementById('fibLow').value = Math.min(...quote.low.filter(v=>v!=null)).toFixed(2);
+        alert("數據抓取成功！");
+    } catch (e) { alert("抓取失敗，請手動輸入數據。"); }
+}
+
 function runAnalysis() {
-    const price = parseFloat(document.getElementById('price').value);
+    const p = parseFloat(document.getElementById('price').value);
     const hi = parseFloat(document.getElementById('fibHigh').value);
     const lo = parseFloat(document.getElementById('fibLow').value);
-    const cost = parseFloat(document.getElementById('cost').value);
+    const c = parseFloat(document.getElementById('cost').value);
 
-    if (!price || !hi || !lo || !cost) return alert('請完整填寫現價、成本、及 90D 高低點，以利判斷進出場！');
+    if (!p || !hi || !lo || !c) return alert("請填寫所有價格欄位！");
 
     document.getElementById('results').style.display = 'block';
     const range = hi - lo;
     
-    // 1. 斐波那契位階判斷
+    // 1. 斐波那契位階與進場判定
     const levels = [
-        {r: 0, l: '起漲點(0%)', type: '支撐'}, 
-        {r: 0.382, l: '強勢回調(38.2%)', type: '強支撐'},
-        {r: 0.5, l: '多空分界(50%)', type: '觀望'}, 
-        {r: 0.618, l: '黃金比例(61.8%)', type: '進場'},
-        {r: 0.786, l: '深層回測(78.6%)', type: '最後支撐'},
-        {r: 1, l: '前波高點(100%)', type: '壓力'}
+        {r: 0, l: '起漲點(0%)', d: '底線'}, {r: 0.382, l: '強勢回調(38.2%)', d: '進場'},
+        {r: 0.5, l: '多空分界(50%)', d: '中性'}, {r: 0.618, l: '黃金回測(61.8%)', d: '進場'},
+        {r: 0.786, l: '深層回測(78.6%)', d: '最後防線'}, {r: 1, l: '波段高點(100%)', d: '壓力'}
     ];
 
-    let fibHTML = `<tr><th>位階</th><th>價格</th><th>進出場判斷</th></tr>`;
-    let isFibBuy = false;
-
+    let fibHTML = `<tr><th>位階</th><th>價格</th><th>判定</th></tr>`;
     levels.forEach(lvl => {
-        const p = +(lo + range * lvl.r).toFixed(2);
-        const dist = Math.abs(price - p) / price;
-        const active = dist < 0.02; // 2% 內視為共振
-        if (active && (lvl.r === 0.382 || lvl.r === 0.618)) isFibBuy = true;
-
+        const val = +(lo + range * lvl.r).toFixed(2);
+        const hit = Math.abs(p - val) / p < 0.02; 
         fibHTML += `<tr>
             <td style="color:var(--gold)">${lvl.l}</td>
-            <td>$${p}</td>
-            <td style="color:${active ? 'var(--green)' : 'var(--dim)'}">
-                ${active ? '⭐ 關鍵' + lvl.type + '位' : '--'}
-            </td>
+            <td>$${val}</td>
+            <td style="color:${hit ? 'var(--green)' : 'var(--dim)'}">${hit ? '⭐ 關鍵' + lvl.d + '位' : '--'}</td>
         </tr>`;
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    // 2. 波浪進出場邏輯 (1.04, 1.2, 1.4)
-    const bP = (cost * 1.04).toFixed(2);
-    const t1 = (cost * 1.2).toFixed(2);
-    const t2 = (cost * 1.4).toFixed(2);
+    // 2. 進出場總結 (波浪邏輯)
+    const bP = (c * 1.04).toFixed(2);
+    const t1 = (c * 1.2).toFixed(2);
+    const t2 = (c * 1.4).toFixed(2);
     
-    let waveMsg = "";
-    let mainSignalHTML = "";
+    let sigClass = "";
+    let sigText = "";
+    let suggestion = "";
 
-    if (price >= bP && price < t1) {
-        waveMsg = `🚀 已突破法人成本 1.04 ($${bP})，符合「進場」信號。`;
-        mainSignalHTML = `<div class="signal-box buy">📍 進場建議：強勢突破，偏多操作</div>`;
-    } else if (price >= t1 && price < t2) {
-        waveMsg = `📈 抵達 1.2 目標 ($${t1})，持股續抱，不建議追高。`;
-        mainSignalHTML = `<div class="signal-box">📍 進場建議：波段持股中，等待目標</div>`;
-    } else if (price >= t2) {
-        waveMsg = `💰 抵達 1.4 滿足位 ($${t2})，觸發「出場」信號。`;
-        mainSignalHTML = `<div class="signal-box sell">📍 出場建議：滿足區抵達，分批獲利</div>`;
+    if (p >= bP && p < t1) {
+        sigClass = "buy";
+        sigText = "進場訊號：強勢啟動";
+        suggestion = `股價已突破 1.04 成本位 ($${bP})，適合進場佈局。`;
+    } else if (p >= t1 && p < t2) {
+        sigClass = "";
+        sigText = "持股訊號：目標推進";
+        suggestion = `已越過第一目標 1.2 ($${t1})，續抱至 1.4。`;
+    } else if (p >= t2) {
+        sigClass = "sell";
+        sigText = "出場訊號：獲利滿足";
+        suggestion = `已觸及 1.4 目標區 ($${t2})，建議分批獲利入袋。`;
     } else {
-        waveMsg = `⌛ 尚未突破成本啟動點 ($${bP})，建議「觀望」。`;
-        mainSignalHTML = `<div class="signal-box">📍 進場建議：築底中，等待突破</div>`;
+        sigClass = "";
+        sigText = "觀望訊號：築底階段";
+        suggestion = `尚未突破成本啟動點 ($${bP})，耐心等待。`;
     }
 
-    document.getElementById('mainSignal').innerHTML = `
-        <div class="section-title">🏮 發財進出場總結</div>
-        ${mainSignalHTML}
-    `;
-
-    document.getElementById('waveOutput').innerHTML = `
-        <div class="section-title">🌊 波浪精算目標</div>
-        <div class="signal-box" style="text-align:left; font-size:12px; font-weight:normal;">
-            ${waveMsg}<br><br>
-            • 啟動買點(1.04)：$${bP}<br>
-            • 第一目標(1.2)：$${t1}<br>
-            • 第二目標(1.4)：$${t2}
+    document.getElementById('mainSignalArea').innerHTML = `
+        <div class="section-title">🏮 發財進出場判定</div>
+        <div class="signal-card ${sigClass}">
+            <div style="font-size:20px; font-weight:900;">${sigText}</div>
+            <div style="font-size:13px; margin-top:8px; opacity:0.8;">${suggestion}</div>
         </div>
     `;
-    
+
+    document.getElementById('waveDetails').innerHTML = `
+        <div class="section-title">🌊 波浪目標預估</div>
+        <div style="font-size:13px; line-height:2; color:var(--dim);">
+            • 進場點 (1.04)：<span style="color:var(--text)">$${bP}</span><br>
+            • 目標一 (1.20)：<span style="color:var(--text)">$${t1}</span><br>
+            • 目標二 (1.40)：<span style="color:var(--text)">$${t2}</span>
+        </div>
+    `;
+
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 </script>
 </body>
 </html>
+
