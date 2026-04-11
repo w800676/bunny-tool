@@ -88,7 +88,7 @@
 </div>
 
 <script>
-const FINMIND_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0xMCAyMDoyNDoxNiIsInVzZXJfaWQiOiJodWFuZzgwNjc2IiwiZW1haWwiOiJ3ODAwNjc2QGdtYWlsLmNvbSIsImlwIjoiMTE0LjI2LjE5LjI4In0.n4LsA6p_i00ZcN45pQ0VS6MYtJXnh8HGXDYHWLwcmP8";
+const FINMIND_TOKEN = "EyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0xMCAyMDoyNDoxNiIsInVzZXJfaWQiOiJodWFuZzgwNjc2IiwiZW1haWwiOiJ3ODAwNjc2QGdtYWlsLmNvbSIsImlwIjoiMTE0LjI2LjE5LjI4In0.n4LsA6p_i00ZcN45pQ0VS6MYtJXnh8HGXDYHWLwcmP8";
 
 function calcEntryTiming(price, cost) {
   const bt = +(cost * 1.04).toFixed(2);
@@ -141,7 +141,7 @@ function calcEntryTiming(price, cost) {
   return {
     phase: "高點區域", phaseIdx: 5, signal: "禁止追買", emoji: "🔴", color: "var(--accent-red)", canEnter: false,
     entry: null, stopLoss: null, target: null,
-    timing: `現價已達關卡三 $${g3} (1.7倍)，歷史高點。請分批獲利了結。`,
+    timing: `現價已達關卡三 $${g3} (1.7倍)，歷史高點區。請分批獲利了結。`,
     rule: "韭菜陷阱：已達最高目標，隨時回檔。"
   };
 }
@@ -180,7 +180,7 @@ function runAnalysis() {
     if (!p || !hi || !lo) return alert('核心價格數據不足');
     document.getElementById('analysisResult').style.display = 'block';
 
-    // 1. 斐波那契計算
+    // 1. 斐波那契計算 (新增噴發價 1.618)
     const range = hi - lo;
     const fibRatios = [
         { r: 0, l: "起漲點", role: "強力支撐" },
@@ -188,11 +188,13 @@ function runAnalysis() {
         { r: 0.5, l: "50.0%", role: "多空分界" },
         { r: 0.618, l: "61.8%", role: "黃金比例" },
         { r: 0.786, l: "78.6%", role: "深層回測" },
-        { r: 1, l: "波段高點", role: "短線壓力" }
+        { r: 1, l: "波段高點", role: "短線壓力" },
+        { r: 1.618, l: "噴發目標", role: "1.618 目標" }
     ];
     let fibHTML = "";
     fibRatios.forEach(f => {
-        const val = hi - range * (1 - f.r);
+        // 修正計算邏輯：r=0 為 low，r=1 為 high，r=1.618 為 low + range * 1.618
+        const val = lo + range * f.r;
         const isNear = Math.abs(p - val) / p < 0.015;
         fibHTML += `<tr><td><span style="font-size:10px; color:var(--text-muted)">${f.l}</span><br>${f.role}</td><td class="price-text">$${val.toFixed(2)}</td><td style="color:${isNear ? 'var(--accent-green)' : (p > val ? 'var(--accent-red)' : 'var(--text-muted)')}">${isNear ? '🎯 價格在此' : (p > val ? '▲ 支撐' : '▼ 壓力')}</td></tr>`;
     });
@@ -246,3 +248,4 @@ function runAnalysis() {
 </script>
 </body>
 </html>
+與
