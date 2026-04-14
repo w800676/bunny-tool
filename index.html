@@ -38,12 +38,18 @@
   .status-box { text-align: center; padding: 25px; border-radius: 20px; border: 1px solid var(--accent-gold); background: radial-gradient(circle at top, #252a36, #1c2029); margin-bottom: 20px; }
   .fib-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 13px; }
   .fib-table tr { border-bottom: 1px solid var(--border); }
-  .fib-table td { padding: 14px 8px; }
+  .fib-table td { padding: 14px 8px; vertical-align: middle; }
   .price-text { font-weight: 700; color: var(--text-main); }
   .target-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; }
   .target-item { background: #0b0d11; padding: 12px 5px; border-radius: 12px; border: 1px solid var(--border); }
   .target-label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
   .target-val { font-size: 14px; font-weight: 700; color: var(--accent-gold); }
+
+  /* 新增策略標籤樣式 */
+  .strat-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; font-weight: bold; }
+  .tag-entry { background: rgba(74,222,128,0.15); color: #4ade80; border: 0.5px solid #4ade80; }
+  .tag-hold { background: rgba(245,200,66,0.15); color: #f5c842; border: 0.5px solid #f5c842; }
+  .tag-exit { background: rgba(248,113,113,0.15); color: #f87171; border: 0.5px solid #f87171; }
 </style>
 </head>
 <body>
@@ -73,8 +79,7 @@
 </div>
 
 <div id="analysisResult" style="display:none;">
-  <div class="status-box" id="statusBox">
-    </div>
+  <div class="status-box" id="statusBox"></div>
 
   <div class="card">
     <div class="card-title">📐 斐波那契進出場判斷</div>
@@ -180,27 +185,41 @@ function runAnalysis() {
     if (!p || !hi || !lo) return alert('核心價格數據不足');
     document.getElementById('analysisResult').style.display = 'block';
 
-    // 1. 斐波那契計算 (新增噴發價 1.618)
     const range = hi - lo;
+    // 增加 1.13, 1.272, 1.382
     const fibRatios = [
-        { r: 0, l: "起漲點", role: "強力支撐" },
-        { r: 0.382, l: "38.2%", role: "強勢回調" },
-        { r: 0.5, l: "50.0%", role: "多空分界" },
-        { r: 0.618, l: "61.8%", role: "黃金比例" },
-        { r: 0.786, l: "78.6%", role: "深層回測" },
-        { r: 1, l: "波段高點", role: "短線壓力" },
-        { r: 1.618, l: "噴發目標", role: "延伸目標🥇" }
+        { r: 0, l: "起漲點", role: "強力支撐", strat: "起漲底線", tag: "tag-hold" },
+        { r: 0.382, l: "38.2%", role: "強勢回調", strat: "破位停損", tag: "tag-exit" },
+        { r: 0.5, l: "50.0%", role: "多空分界", strat: "多空關鍵", tag: "tag-hold" },
+        { r: 0.618, l: "61.8%", role: "黃金比例", strat: "波段進場點", tag: "tag-entry" },
+        { r: 0.786, l: "78.6%", role: "深層回測", strat: "最後防線", tag: "tag-exit" },
+        { r: 1, l: "波段高點", role: "短線壓力", strat: "前高阻力", tag: "tag-hold" },
+        { r: 1.13, l: "113.0%", role: "假突破點", strat: "減碼觀察", tag: "tag-exit" },
+        { r: 1.272, l: "127.2%", role: "噴發首位", strat: "分批獲利", tag: "tag-exit" },
+        { r: 1.382, l: "138.2%", role: "二波擴展", strat: "強勢停利", tag: "tag-exit" },
+        { r: 1.618, l: "噴發目標", role: "終極停利🥇", strat: "全數出場", tag: "tag-exit" }
     ];
+
     let fibHTML = "";
     fibRatios.forEach(f => {
-        // 修正計算邏輯：r=0 為 low，r=1 為 high，r=1.618 為 low + range * 1.618
         const val = lo + range * f.r;
         const isNear = Math.abs(p - val) / p < 0.015;
-        fibHTML += `<tr><td><span style="font-size:10px; color:var(--text-muted)">${f.l}</span><br>${f.role}</td><td class="price-text">$${val.toFixed(2)}</td><td style="color:${isNear ? 'var(--accent-green)' : (p > val ? 'var(--accent-red)' : 'var(--text-muted)')}">${isNear ? '🎯 價格在此' : (p > val ? '▲ 支撐' : '▼ 壓力')}</td></tr>`;
+        
+        fibHTML += `
+            <tr>
+                <td>
+                    <span style="font-size:10px; color:var(--text-muted)">${f.l}</span><br>
+                    <span style="font-weight:500;">${f.role}</span><br>
+                    <span class="strat-tag ${f.tag}">${f.strat}</span>
+                </td>
+                <td class="price-text">$${val.toFixed(2)}</td>
+                <td style="color:${isNear ? 'var(--accent-green)' : (p > val ? 'var(--accent-red)' : 'var(--text-muted)')}; font-size:11px;">
+                    ${isNear ? '🎯 價格在此' : (p > val ? '▲ 支撐' : '▼ 壓力')}
+                </td>
+            </tr>`;
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    // 2. 核心診斷介面 (整合圖片樣式)
     if (cost) {
         const timing = calcEntryTiming(p, cost);
         const phases = ["收貨期", "蓄力", "第一波", "第二波", "第三波", "高點"];
@@ -232,7 +251,6 @@ function runAnalysis() {
         `;
         document.getElementById('statusBox').style.borderColor = timing.color;
 
-        // 更新波浪小卡片
         const t1 = cost * 1.04; const t2 = cost * 1.2; const t3 = cost * 1.4;
         document.getElementById('waveTargets').innerHTML = `
             <div class="target-item"><div class="target-label">突破點 1.04</div><div class="target-val">$${t1.toFixed(2)}</div></div>
@@ -248,4 +266,3 @@ function runAnalysis() {
 </script>
 </body>
 </html>
-
