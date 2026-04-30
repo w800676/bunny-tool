@@ -177,34 +177,37 @@ function runAnalysis() {
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    // 評分與策略說明邏輯
-    let score = 50; 
+    // --- 嚴格評分標準修正 ---
+    let score = 40; // 基礎分調降為 40
     let stratText = "";
+    const isStrongZone = p > (lo + range * 0.618); // 必須站上 0.618 才算強勢
     const isAboveMid = p > (lo + range * 0.5);
-    const isProfitable = cost && p > cost;
+    const isProfitable = cost && p > (cost * 1.04); // 獲利需脫離成本 4% 
+    const isBreakHigh = p > hi; // 突破前高
 
-    if (isAboveMid) { score += 25; }
-    if (isProfitable) { score += 25; }
+    if (isStrongZone) { score += 20; } 
+    if (isProfitable) { score += 20; }
+    if (isBreakHigh) { score += 20; }
     score = Math.min(100, score);
 
-    // 根據評分給予進出場建議
+    // 根據嚴格評分給予進出場建議
     if (score >= 90) {
-        stratText = "💎 強勢格局：持股續抱，目標看向魚尾段滿足點，不預設高點。";
+        stratText = "💎 極致格局：股價已突破前高且獲利穩定，進入魚尾噴發段，建議持股續抱至 1.382 以上。";
     } else if (score >= 70) {
-        stratText = "✨ 偏多格局：若有回測 0.618 支撐可考慮分批進場，獲利狀態下可部分轉入長線持有。";
+        stratText = "✨ 穩健格局：站穩主升段位階且脫離成本區，趨勢向上明朗，回測關鍵位階可考慮加碼。";
     } else if (score >= 50) {
-        stratText = "⏳ 盤整格局：多空拉鋸中，建議分步佈局，站穩 0.5 分界線後再行加碼。";
+        stratText = "⏳ 觀察格局：股價在多空分界線掙扎，尚未脫離成本風險區，建議觀望或僅小量佈局。";
     } else {
-        stratText = "⚠️ 弱勢格局：股價於低位盤整，建議以 0 位階作為起漲防守點，嚴守停損。";
+        stratText = "⚠️ 警訊格局：股價處於 0.5 以下弱勢區或成本保護不足，應嚴守 0 位階止損，避免套牢。";
     }
 
     document.getElementById('statusBox').innerHTML = `
         <div class="score-circle" style="border-color:${signalColor}; color:${signalColor}">${score}</div>
         <div style="font-size:22px; font-weight:900; color:${signalColor}; margin-bottom:10px;">${mainSignal}</div>
         <div class="report-desc">
-            目前股價位於「${isAboveMid ? '多方強勢' : '弱勢整理'}」區間。
-            ${hitAny ? '偵測到關鍵位階訊號，請參考表格內點亮之策略建議。' : '目前尚未觸及核心位階，建議觀察鄰近支撐壓力。'}
-            <div class="strat-info">📢 進出場策略建議：<br>${stratText}</div>
+            目前股價位於「${isAboveMid ? '多方區間' : '空方整理'}」之 ${isStrongZone ? '強勢位' : '弱勢位'}。
+            ${hitAny ? '偵測到關鍵位階訊號，請參考表格內點亮之策略建議。' : '目前尚未觸及核心位階點亮。'}
+            <div class="strat-info">📢 進出場策略建議（嚴格版）：<br>${stratText}</div>
         </div>`;
 
     if (cost) {
