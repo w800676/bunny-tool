@@ -1,3 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>發財 - Bunny Finance Lab 3.5</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d11;
+    --surface: #15181f;
+    --card: #1c2029;
+    --border: #2d323d;
+    --accent-gold: #f5c842;
+    --accent-purple: #b48eff;
+    --accent-green: #4ade80;
+    --accent-red: #f87171;
+    --text-main: #f5f5f5;
+    --text-muted: #8a8f9d;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text-main); font-family: 'Noto Sans TC', sans-serif; padding: 20px 15px 80px; }
+  .app-header { text-align: center; margin-bottom: 20px; }
+  .app-header h1 { font-size: 24px; font-weight: 900; background: linear-gradient(to right, #fff, var(--accent-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .app-header p { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--accent-gold); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+  
+  .input-label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+  input { background: #0b0d11; border: 1px solid var(--border); border-radius: 10px; color: var(--accent-gold); font-family: 'DM Mono', monospace; font-size: 16px; padding: 12px; width: 100%; outline: none; transition: 0.3s; }
+  input:focus { border-color: var(--accent-gold); box-shadow: 0 0 10px rgba(245,200,66,0.1); }
+  
+  .btn-fetch { width: 100%; background: #1a1e26; border: 1px dashed var(--accent-gold); border-radius: 12px; color: var(--accent-gold); padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 15px 0; transition: 0.3s; }
+  .btn-analyze { width: 100%; background: linear-gradient(135deg, #f5c842, #d4a72d); border: none; border-radius: 14px; color: #000; padding: 16px; font-size: 16px; font-weight: 900; letter-spacing: 2px; cursor: pointer; }
+
+  .status-box { text-align: center; padding: 25px; border-radius: 20px; border: 1px solid var(--accent-gold); background: radial-gradient(circle at top, #252a36, #1c2029); margin-bottom: 20px; }
+  
+  .score-circle {
+    width: 80px; height: 80px; 
+    border: 4px solid var(--accent-gold); 
+    border-radius: 50%; 
+    display: flex; align-items: center; justify-content: center; 
+    font-size: 28px; font-weight: 900; 
+    margin: 0 auto 15px;
+    background: rgba(255,255,255,0.05);
+    box-shadow: 0 0 15px rgba(245,200,66,0.2);
+  }
+
+  .rr-report { text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-top: 15px; }
+  .rr-item { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .rr-active { color: #fff; font-weight: bold; }
+
+  .row-buy-active { background: rgba(248, 113, 113, 0.15) !important; border-left: 4px solid var(--accent-red) !important; }
+  .row-sell-active { background: rgba(74, 222, 128, 0.15) !important; border-left: 4px solid var(--accent-green) !important; }
+
+  .fib-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 13px; }
+  .fib-table tr { border-bottom: 1px solid var(--border); }
+  .fib-table td { padding: 14px 8px; vertical-align: middle; }
+  .price-text { font-weight: 700; color: var(--text-main); }
+  
+  .target-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; }
+  .target-item { background: #0b0d11; padding: 12px 5px; border-radius: 12px; border: 1px solid var(--border); }
+  .target-label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
+  .target-val { font-size: 14px; font-weight: 700; color: var(--accent-gold); }
+
+  .strat-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; font-weight: bold; }
+  .tag-entry { background: rgba(248, 113, 113, 0.2); color: var(--accent-red); border: 0.5px solid var(--accent-red); }
+  .tag-exit { background: rgba(74, 222, 128, 0.2); color: var(--accent-green); border: 0.5px solid var(--accent-green); }
+  .tag-hold { background: rgba(245,200,66,0.15); color: #f5c842; border: 0.5px solid #f5c842; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <p>BUNNY FINANCE LAB PROFESSIONAL</p>
+  <h1>法人波浪精算 3.5</h1>
+</div>
+
+<div class="card">
+  <div class="card-title">📡 數據自動抓取 (FinMind 介接)</div>
+  <label class="input-label">股票代號 (如: 2330)</label>
+  <input type="text" id="ticker" placeholder="輸入 4 位台股代號">
+  
+  <button class="btn-fetch" id="btnFetch" onclick="fetchFinMindData()">📡 啟動專業 API 數據同步</button>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+    <div><label class="input-label">當前現價</label><input type="number" id="price" step="0.01"></div>
+    <div><label class="input-label">法人成本</label><input type="number" id="cost" step="0.01" placeholder="填入成本"></div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+    <div><label class="input-label">區間低點 (3個月)</label><input type="number" id="low" step="0.01"></div>
+    <div><label class="input-label">區間高點 (3個月)</label><input type="number" id="high" step="0.01"></div>
+  </div>
+
+  <button class="btn-analyze" style="margin-top:20px;" onclick="runAnalysis()">🧧 開始精算</button>
+</div>
+
+<div id="analysisResult" style="display:none;">
+  <div class="status-box" id="statusBox"></div>
+
+  <div class="card">
+    <div class="card-title">📐 斐波那契 (買紅賣綠)</div>
+    <table class="fib-table" id="fibTable"></table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🌊 法人成本擴展目標</div>
+    <div class="target-grid" id="waveTargets"></div>
+  </div>
+</div>
+
+<script>
 const FINMIND_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiaHVhbmc4MDY3NiIsImVtYWlsIjoidzgwMDY3NkBnbWFpbC5jb20ifQ.k7BlAxav_GxT_tchaXAyuDafq_hIV01eUSzk2H_cZBQ";
 
 async function fetchFinMindData() {
@@ -34,69 +147,49 @@ function runAnalysis() {
     document.getElementById('analysisResult').style.display = 'block';
     const range = hi - lo;
 
-    // --- 核心邏輯參數 (對齊 Python 版) ---
-    const PROXIMITY_PCT = 0.015; // 1.5% 貼近度視為「匯流點亮」
-    const targetPrice = lo + range * 1.382; // 魚尾擴展目標
-    const stopPrice = lo; // 以起步位為支撐防守
+    // 波段風報比邏輯修正
+    // 獲利目標：魚尾段 (Fib 1.382)
+    // 風險止損：起步位 (Fib 0)
+    const targetPrice = lo + range * 1.382;
+    const stopPrice = lo; 
+    let rr = 0;
+    if (p > stopPrice) {
+        rr = (targetPrice - p) / (p - stopPrice);
+    }
 
-    // 風報比計算
-    let rr = p > stopPrice ? (targetPrice - p) / (p - stopPrice) : 0;
-
-    // Fibonacci 位階設定 (整合 FIB_KEY_LEVELS ★)
     const fibRatios = [
-        { r: 1.618, l: "末升段", role: "終極目標區", strat: "全數獲利", tag: "tag-exit", type: "sell", isKey: false },
-        { r: 1.382, l: "魚尾段", role: "擴展滿足點", strat: "分批停利", tag: "tag-exit", type: "sell", isKey: true },
-        { r: 0.786, l: "轉折位", role: "魚身轉魚尾", strat: "高位減碼", tag: "tag-exit", type: "sell", isKey: false },
-        { r: 0.618, l: "主升段", role: "法人護盤區", strat: "波段買點", tag: "tag-entry", type: "buy", isKey: true },
-        { r: 0.5, l: "魚頭段", role: "多空起漲點", strat: "初步佈局", tag: "tag-entry", type: "buy", isKey: true },
-        { r: 0.382, l: "強勢位", role: "強勢回測位", strat: "擇機進場", tag: "tag-entry", type: "buy", isKey: true },
-        { r: 0, l: "起步位", role: "強力支撐", strat: "起漲防守", tag: "tag-hold", type: "buy", isKey: false }
+        { r: 1.618, l: "末升段", role: "終極目標區", strat: "全數獲利", tag: "tag-exit", type: "sell" },
+        { r: 1.382, l: "魚尾段", role: "擴展滿足點", strat: "分批停利", tag: "tag-exit", type: "sell" },
+        { r: 0.786, l: "轉折位", role: "魚身轉魚尾", strat: "高位減碼", tag: "tag-exit", type: "sell" },
+        { r: 0.618, l: "主升段", role: "法人護盤區", strat: "波段買點", tag: "tag-entry", type: "buy" },
+        { r: 0.5, l: "魚頭段", role: "多空起漲點", strat: "初步佈局", tag: "tag-entry", type: "buy" },
+        { r: 0, l: "起步位", role: "強力支撐", strat: "起漲防守", tag: "tag-hold", type: "buy" }
     ];
 
     let fibHTML = "";
     let mainSignal = "波段佈局中";
     let signalColor = "var(--accent-gold)";
-    let isNearKey = false; // 是否貼近關鍵位
 
     fibRatios.forEach(f => {
         const val = lo + range * f.r;
-        const dist = Math.abs(p - val) / val;
-        const isNear = dist <= PROXIMITY_PCT;
-        
+        const isNear = Math.abs(p - val) / val < 0.02;
         let rowClass = "";
         if (isNear) {
             rowClass = f.type === "buy" ? "row-buy-active" : "row-sell-active";
-            if (f.isKey) {
-                isNearKey = true;
-                mainSignal = f.type === "buy" ? `🎯 關鍵支撐確認 (${f.r})` : `🚀 目標滿足確認 (${f.r})`;
-                signalColor = f.type === "buy" ? "var(--accent-red)" : "var(--accent-green)";
-            }
+            mainSignal = f.type === "buy" ? "🎯 法人護盤點點亮" : "🚀 目標滿足點點亮";
+            signalColor = f.type === "buy" ? "var(--accent-red)" : "var(--accent-green)";
         }
-
-        fibHTML += `
-            <tr class="${rowClass}">
-                <td>
-                    <span style="font-size:10px; color:var(--text-muted)">${f.l} (${f.r}) ${f.isKey ? '★' : ''}</span><br>
-                    <b>${f.role}</b><br>
-                    <span class="strat-tag ${f.tag}">${f.strat}</span>
-                </td>
-                <td class="price-text">$${val.toFixed(2)}</td>
-                <td style="text-align:right; font-size:11px; color:${isNear ? 'inherit' : (p > val ? 'var(--accent-red)' : 'var(--text-muted)')}">
-                    ${isNear ? '🎯 匯流點亮' : (p > val ? '▲ 支撐' : '▼ 壓力')}
-                </td>
-            </tr>`;
+        fibHTML += `<tr class="${rowClass}"><td><span style="font-size:10px; color:var(--text-muted)">${f.l} (${f.r})</span><br><b>${f.role}</b><br><span class="strat-tag ${f.tag}">${f.strat}</span></td><td class="price-text">$${val.toFixed(2)}</td><td style="text-align:right; font-size:11px; color:${isNear ? 'inherit' : (p > val ? 'var(--accent-red)' : 'var(--text-muted)')}">${isNear ? '🎯 點亮' : (p > val ? '▲ 支撐' : '▼ 壓力')}</td></tr>`;
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    // --- 綜合評分權重 (加權制) ---
-    let score = 40; // 基礎分
-    if (p > (lo + range * 0.5)) score += 15; // 站上強弱分界線 (0.5)
-    if (rr >= 2.0) score += 20;             // 風報比達標
-    if (cost && p > cost) score += 15;       // 帳面處於獲利狀態
-    if (isNearKey) score += 10;              // 貼近關鍵位加權
+    // 評分權重邏輯修正
+    let score = 50; 
+    if (p > (lo + range * 0.5)) score += 15; // 站上強弱分界線
+    if (rr >= 2.0) score += 20;            // 風報比優異
+    if (cost && p > cost) score += 15;      // 處於獲利狀態
     score = Math.min(100, score);
 
-    // 風報比描述
     let rrText = "❌ 風報比不具優勢"; let rrC = "var(--accent-red)";
     if (rr >= 2.5) { rrText = "💎 極佳：波段空間大"; rrC = "var(--accent-green)"; }
     else if (rr >= 1.5) { rrText = "✨ 理想：適合佈局"; rrC = "var(--accent-gold)"; }
@@ -105,13 +198,9 @@ function runAnalysis() {
         <div class="score-circle" style="border-color:${signalColor}; color:${signalColor}">${score}</div>
         <div style="font-size:22px; font-weight:900; color:${signalColor}; margin-bottom:10px;">${mainSignal}</div>
         <div class="rr-report">
-            <div style="font-size:11px; color:var(--accent-gold); font-weight:bold; margin-bottom:8px;">📊 Confluence 多重確認診斷</div>
+            <div style="font-size:11px; color:var(--accent-gold); font-weight:bold; margin-bottom:8px;">📊 波浪風報比 (目標 $${targetPrice.toFixed(1)})</div>
             <div style="font-size:14px; font-weight:700; color:${rrC}; margin-bottom:10px;">${rrText} (RR: ${rr.toFixed(2)})</div>
-            <div style="font-size:11px; color:var(--text-muted); line-height:1.5;">
-                • 目標價 (1.382): $${targetPrice.toFixed(2)}<br>
-                • 防守價 (Low): $${stopPrice.toFixed(2)}<br>
-                • 狀態: ${isNearKey ? '🔥 偵測到關鍵位匯流' : '❄️ 尚未進入核心匯流區'}
-            </div>
+            <div style="font-size:11px; color:var(--text-muted);">計算邏輯：(滿足點 - 現價) / (現價 - 低點防守)</div>
         </div>`;
 
     if (cost) {
@@ -124,3 +213,6 @@ function runAnalysis() {
     }
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
+</script>
+</body>
+</html>
