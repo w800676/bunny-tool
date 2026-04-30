@@ -47,7 +47,7 @@
     box-shadow: 0 0 15px rgba(245,200,66,0.2);
   }
 
-  .report-desc { text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-top: 15px; font-size: 13px; line-height: 1.6; color: var(--text-main); }
+  .rr-report { text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-top: 15px; }
 
   .row-buy-active { background: rgba(248, 113, 113, 0.15) !important; border-left: 4px solid var(--accent-red) !important; }
   .row-sell-active { background: rgba(74, 222, 128, 0.15) !important; border-left: 4px solid var(--accent-green) !important; }
@@ -145,12 +145,12 @@ function runAnalysis() {
     document.getElementById('analysisResult').style.display = 'block';
     const range = hi - lo;
 
-    // 補全位階：加入 1.0 與 1.272 解決跳空問題
+    // --- 關鍵修正 1：補全斐波那契位階 ---
     const fibRatios = [
         { r: 1.618, l: "末升段", role: "終極目標區", strat: "全數獲利", tag: "tag-exit", type: "sell" },
         { r: 1.382, l: "魚尾段", role: "擴展滿足點", strat: "分批停利", tag: "tag-exit", type: "sell" },
         { r: 1.272, l: "噴發位", role: "初步擴展區", strat: "壓力觀察", tag: "tag-exit", type: "sell" },
-        { r: 1.0,   l: "前高點", role: "關鍵壓力位", strat: "高位減碼", tag: "tag-exit", type: "sell" },
+        { r: 1.0,   l: "前高點", role: "關鍵壓力位", strat: "壓力回測", tag: "tag-exit", type: "sell" },
         { r: 0.786, l: "轉折位", role: "魚身轉魚尾", strat: "高位減碼", tag: "tag-exit", type: "sell" },
         { r: 0.618, l: "主升段", role: "法人護盤區", strat: "波段買點", tag: "tag-entry", type: "buy" },
         { r: 0.5,   l: "魚頭段", role: "多空起漲點", strat: "初步佈局", tag: "tag-entry", type: "buy" },
@@ -177,18 +177,18 @@ function runAnalysis() {
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    // 評分邏輯 (移除風報比權重，調整為趨勢與成本權重)
+    // --- 關鍵修正 2：移除風報比，調整評分權重 ---
     let score = 50; 
-    if (p > (lo + range * 0.5)) score += 25; // 站上強弱分界線
-    if (cost && p > cost) score += 25;      // 處於獲利狀態
+    if (p > (lo + range * 0.5)) score += 25; // 站上強弱分界線 (50% 權重)
+    if (cost && p > cost) score += 25;      // 處於獲利狀態 (50% 權重)
     score = Math.min(100, score);
 
     document.getElementById('statusBox').innerHTML = `
         <div class="score-circle" style="border-color:${signalColor}; color:${signalColor}">${score}</div>
         <div style="font-size:22px; font-weight:900; color:${signalColor}; margin-bottom:10px;">${mainSignal}</div>
-        <div class="report-desc">
-            目前股價位於「${p > (lo + range * 0.5) ? '強勢多方' : '弱勢整理'}」區間。
-            ${hitAny ? '偵測到關鍵位階訊號，請參考表格內點亮之策略建議。' : '尚未到達核心位階，建議觀察鄰近支撐壓力點。'}
+        <div class="rr-report" style="padding: 15px; font-size: 13px; color: var(--text-main);">
+            目前股價位於「${p > (lo + range * 0.5) ? '多方強勢' : '弱勢整理'}」區間。
+            ${hitAny ? '偵測到關鍵位階訊號，請參考表格內點亮之策略。' : '目前尚未觸及核心位階，建議觀察鄰近支撐壓力。'}
         </div>`;
 
     if (cost) {
