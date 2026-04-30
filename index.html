@@ -47,7 +47,8 @@
     box-shadow: 0 0 15px rgba(245,200,66,0.2);
   }
 
-  .rr-report { text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-top: 15px; }
+  .report-desc { text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-top: 15px; font-size: 13px; line-height: 1.6; color: var(--text-main); }
+  .strat-info { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--accent-gold); font-weight: bold; }
 
   .row-buy-active { background: rgba(248, 113, 113, 0.15) !important; border-left: 4px solid var(--accent-red) !important; }
   .row-sell-active { background: rgba(74, 222, 128, 0.15) !important; border-left: 4px solid var(--accent-green) !important; }
@@ -145,12 +146,11 @@ function runAnalysis() {
     document.getElementById('analysisResult').style.display = 'block';
     const range = hi - lo;
 
-    // --- 關鍵修正 1：補全斐波那契位階 ---
     const fibRatios = [
         { r: 1.618, l: "末升段", role: "終極目標區", strat: "全數獲利", tag: "tag-exit", type: "sell" },
         { r: 1.382, l: "魚尾段", role: "擴展滿足點", strat: "分批停利", tag: "tag-exit", type: "sell" },
         { r: 1.272, l: "噴發位", role: "初步擴展區", strat: "壓力觀察", tag: "tag-exit", type: "sell" },
-        { r: 1.0,   l: "前高點", role: "關鍵壓力位", strat: "壓力回測", tag: "tag-exit", type: "sell" },
+        { r: 1.0,   l: "前高點", role: "關鍵壓力位", strat: "高位減碼", tag: "tag-exit", type: "sell" },
         { r: 0.786, l: "轉折位", role: "魚身轉魚尾", strat: "高位減碼", tag: "tag-exit", type: "sell" },
         { r: 0.618, l: "主升段", role: "法人護盤區", strat: "波段買點", tag: "tag-entry", type: "buy" },
         { r: 0.5,   l: "魚頭段", role: "多空起漲點", strat: "初步佈局", tag: "tag-entry", type: "buy" },
@@ -177,18 +177,34 @@ function runAnalysis() {
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    // --- 關鍵修正 2：移除風報比，調整評分權重 ---
+    // 評分與策略說明邏輯
     let score = 50; 
-    if (p > (lo + range * 0.5)) score += 25; // 站上強弱分界線 (50% 權重)
-    if (cost && p > cost) score += 25;      // 處於獲利狀態 (50% 權重)
+    let stratText = "";
+    const isAboveMid = p > (lo + range * 0.5);
+    const isProfitable = cost && p > cost;
+
+    if (isAboveMid) { score += 25; }
+    if (isProfitable) { score += 25; }
     score = Math.min(100, score);
+
+    // 根據評分給予進出場建議
+    if (score >= 90) {
+        stratText = "💎 強勢格局：持股續抱，目標看向魚尾段滿足點，不預設高點。";
+    } else if (score >= 70) {
+        stratText = "✨ 偏多格局：若有回測 0.618 支撐可考慮分批進場，獲利狀態下可部分轉入長線持有。";
+    } else if (score >= 50) {
+        stratText = "⏳ 盤整格局：多空拉鋸中，建議分步佈局，站穩 0.5 分界線後再行加碼。";
+    } else {
+        stratText = "⚠️ 弱勢格局：股價於低位盤整，建議以 0 位階作為起漲防守點，嚴守停損。";
+    }
 
     document.getElementById('statusBox').innerHTML = `
         <div class="score-circle" style="border-color:${signalColor}; color:${signalColor}">${score}</div>
         <div style="font-size:22px; font-weight:900; color:${signalColor}; margin-bottom:10px;">${mainSignal}</div>
-        <div class="rr-report" style="padding: 15px; font-size: 13px; color: var(--text-main);">
-            目前股價位於「${p > (lo + range * 0.5) ? '多方強勢' : '弱勢整理'}」區間。
-            ${hitAny ? '偵測到關鍵位階訊號，請參考表格內點亮之策略。' : '目前尚未觸及核心位階，建議觀察鄰近支撐壓力。'}
+        <div class="report-desc">
+            目前股價位於「${isAboveMid ? '多方強勢' : '弱勢整理'}」區間。
+            ${hitAny ? '偵測到關鍵位階訊號，請參考表格內點亮之策略建議。' : '目前尚未觸及核心位階，建議觀察鄰近支撐壓力。'}
+            <div class="strat-info">📢 進出場策略建議：<br>${stratText}</div>
         </div>`;
 
     if (cost) {
