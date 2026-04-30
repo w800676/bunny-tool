@@ -65,14 +65,14 @@
 
 <div class="card">
   <div class="card-title">📡 數據自動抓取 (FinMind 介接)</div>
-  <label class="input-label">股票代號 (如: 2312)</label>
+  <label class="input-label">股票代號 (如: 2330)</label>
   <input type="text" id="ticker" placeholder="輸入 4 位台股代號">
   
   <button class="btn-fetch" id="btnFetch" onclick="fetchFinMindData()">📡 啟動專業 API 數據同步</button>
 
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
     <div><label class="input-label">當前現價</label><input type="number" id="price" step="0.01"></div>
-    <div><label class="input-label">法人成本</label><input type="number" id="cost" step="0.01" placeholder="填入觀察成本"></div>
+    <div><label class="input-label">法人成本</label><input type="number" id="cost" step="0.01" placeholder="填入成本"></div>
   </div>
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
     <div><label class="input-label">區間低點 (3個月)</label><input type="number" id="low" step="0.01"></div>
