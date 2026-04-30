@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fortune Stock Strategic 4.0</title>
+<title>Fortune Strategic 5.0 - 買紅賣綠點亮版</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -12,206 +12,145 @@
     --card: #1c2029;
     --border: #2d323d;
     --accent-gold: #f5c842;
-    --accent-purple: #b48eff;
-    --accent-green: #4ade80;
-    --accent-red: #f87171;
+    --accent-green: #4ade80; /* 賣點顏色 */
+    --accent-red: #f87171;   /* 買點顏色 */
     --text-main: #f5f5f5;
     --text-muted: #8a8f9d;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: var(--bg); color: var(--text-main); font-family: 'Noto Sans TC', sans-serif; padding: 20px 15px 80px; }
   
-  /* Header */
-  .app-header { text-align: center; margin-bottom: 20px; }
-  .app-header h1 { font-size: 24px; font-weight: 900; background: linear-gradient(to right, #fff, var(--accent-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .app-header p { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
-
-  /* Cards */
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-  .card-title { font-size: 13px; font-weight: 700; color: var(--accent-gold); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--accent-gold); margin-bottom: 15px; }
   
-  /* Input UI */
-  .input-label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
-  input { background: #0b0d11; border: 1px solid var(--border); border-radius: 10px; color: var(--accent-gold); font-family: 'DM Mono', monospace; font-size: 16px; padding: 12px; width: 100%; outline: none; transition: 0.3s; }
-  input:focus { border-color: var(--accent-gold); box-shadow: 0 0 10px rgba(245,200,66,0.1); }
-  
-  .btn-fetch { width: 100%; background: #1a1e26; border: 1px dashed var(--accent-gold); border-radius: 12px; color: var(--accent-gold); padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 15px 0; }
-  .btn-analyze { width: 100%; background: linear-gradient(135deg, #f5c842, #d4a72d); border: none; border-radius: 14px; color: #000; padding: 16px; font-size: 16px; font-weight: 900; letter-spacing: 2px; cursor: pointer; }
+  input { background: #0b0d11; border: 1px solid var(--border); border-radius: 10px; color: var(--accent-gold); font-family: 'DM Mono', monospace; font-size: 16px; padding: 12px; width: 100%; outline: none; margin-bottom: 10px; }
+  .btn-analyze { width: 100%; background: linear-gradient(135deg, #f5c842, #d4a72d); border: none; border-radius: 14px; color: #000; padding: 16px; font-size: 16px; font-weight: 900; cursor: pointer; }
 
-  /* Status Dashboard */
+  /* 狀態儀表板 */
   .status-box { text-align: center; padding: 25px; border-radius: 24px; border: 1px solid var(--accent-gold); background: radial-gradient(circle at top, #252a36, #1c2029); margin-bottom: 20px; }
   .score-circle { width: 85px; height: 85px; border-radius: 50%; border: 6px solid var(--accent-gold); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 900; }
-  .entry-badge { display: inline-block; padding: 6px 16px; border-radius: 50px; font-size: 14px; font-weight: 800; margin-top: 10px; }
 
-  /* Analysis Table */
-  .fib-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 13px; }
-  .fib-table tr { border-bottom: 1px solid var(--border); }
-  .fib-table td { padding: 14px 8px; vertical-align: middle; }
+  /* 點亮效果樣式 */
+  .active-buy { background: rgba(248, 113, 113, 0.15) !important; border-left: 4px solid var(--accent-red) !important; }
+  .active-sell { background: rgba(74, 222, 128, 0.15) !important; border-left: 4px solid var(--accent-green) !important; }
+
+  .fib-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; }
+  .fib-table td { padding: 15px 10px; border-bottom: 1px solid var(--border); }
   
-  .strat-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; font-weight: bold; }
-  .tag-entry { background: rgba(74,222,128,0.15); color: #4ade80; border: 0.5px solid #4ade80; }
-  .tag-hold { background: rgba(245,200,66,0.15); color: #f5c842; border: 0.5px solid #f5c842; }
-  .tag-exit { background: rgba(248,113,113,0.15); color: #f87171; border: 0.5px solid #f87171; }
+  .target-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 5px; }
+  .tag-buy { background: var(--accent-red); color: #fff; }
+  .tag-sell { background: var(--accent-green); color: #000; }
 
-  .advice-card { background: rgba(0,0,0,0.25); border-radius: 12px; padding: 15px; margin-top: 15px; text-align: left; border-left: 3px solid var(--accent-gold); }
-  .advice-title { font-size: 11px; color: var(--accent-gold); font-weight: 800; margin-bottom: 5px; }
-  .advice-text { font-size: 13px; color: #d1d5db; line-height: 1.5; }
+  .rr-report { margin-top: 15px; padding: 15px; border-radius: 12px; background: rgba(0,0,0,0.3); text-align: left; }
+  .rr-item { font-size: 12px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
 </style>
 </head>
 <body>
 
-<div class="app-header">
-  <p>CATEDWARD.COM STRATEGIC</p>
-  <h1>發財強勢股精算 4.0</h1>
-</div>
-
 <div class="card">
-  <div class="card-title">📡 數據自動同步</div>
-  <input type="text" id="ticker" placeholder="股票代號 (如: 2312)">
-  <button class="btn-fetch" id="btnFetch" onclick="fetchFinMindData()">📡 啟動 FinMind API 同步</button>
-
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-    <div><label class="input-label">當前現價</label><input type="number" id="price" step="0.01"></div>
-    <div><label class="input-label">法人成本</label><input type="number" id="cost" step="0.01"></div>
+  <div class="card-title">⚙️ 策略數據輸入 (買紅賣綠版)</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+    <div><label style="font-size:11px; color:var(--text-muted)">目前現價</label><input type="number" id="price" step="0.01"></div>
+    <div><label style="font-size:11px; color:var(--text-muted)">法人成本</label><input type="number" id="cost" step="0.01"></div>
   </div>
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
-    <div><label class="input-label">區間低點</label><input type="number" id="low" step="0.01"></div>
-    <div><label class="input-label">區間高點</label><input type="number" id="high" step="0.01"></div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+    <div><label style="font-size:11px; color:var(--text-muted)">波段高點</label><input type="number" id="high" step="0.01"></div>
+    <div><label style="font-size:11px; color:var(--text-muted)">波段低點</label><input type="number" id="low" step="0.01"></div>
   </div>
-  <input type="hidden" id="atr_val">
-
-  <button class="btn-analyze" style="margin-top:20px;" onclick="runAnalysis()">🧧 開始策略評估</button>
+  <button class="btn-analyze" onclick="runAnalysis()">🧧 點亮買賣關鍵位</button>
 </div>
 
-<div id="analysisResult" style="display:none;">
+<div id="resultArea" style="display:none;">
   <div class="status-box" id="statusBox"></div>
-
   <div class="card">
-    <div class="card-title">📐 斐波那契過濾器 (Fib Analysis)</div>
+    <div class="card-title">📐 雙向斐波那契追蹤</div>
     <table class="fib-table" id="fibTable"></table>
-  </div>
-
-  <div class="card">
-    <div class="card-title">🌊 法人波浪擴展目標</div>
-    <div class="target-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;" id="waveTargets"></div>
   </div>
 </div>
 
 <script>
-const FINMIND_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiaHVhbmc4MDY3NiIsImVtYWlsIjoidzgwMDY3NkBnbWFpbC5jb20ifQ.k7BlAxav_GxT_tchaXAyuDafq_hIV01eUSzk2H_cZBQ";
-
-async function fetchFinMindData() {
-    const ticker = document.getElementById('ticker').value.trim();
-    if (!ticker) return alert('請輸入代號');
-    const btn = document.getElementById('btnFetch');
-    btn.textContent = '🚀 正在同步最新數據...';
-    
-    const endDate = new Date().toISOString().split('T')[0];
-    const startDate = new Date(new Date().setDate(new Date().getDate() - 95)).toISOString().split('T')[0];
-
-    try {
-        const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${ticker}&start_date=${startDate}&end_date=${endDate}&token=${FINMIND_TOKEN}`;
-        const response = await fetch(url);
-        const json = await response.json();
-        const data = json.data;
-        
-        document.getElementById('price').value = data[data.length - 1].close;
-        document.getElementById('high').value = Math.max(...data.slice(-60).map(d => d.max)).toFixed(2);
-        document.getElementById('low').value = Math.min(...data.slice(-60).map(d => d.min)).toFixed(2);
-        
-        // 計算簡單 ATR
-        let trs = [];
-        for(let i=1; i<data.length; i++) {
-            trs.push(Math.max(data[i].max-data[i].min, Math.abs(data[i].max-data[i-1].close)));
-        }
-        document.getElementById('atr_val').value = trs.slice(-20).reduce((a,b)=>a+b,0)/20;
-        
-        btn.textContent = '✅ 同步完成';
-    } catch (e) { alert('同步失敗'); btn.textContent = '❌ 失敗'; }
-}
-
 function runAnalysis() {
     const p = parseFloat(document.getElementById('price').value);
     const hi = parseFloat(document.getElementById('high').value);
     const lo = parseFloat(document.getElementById('low').value);
     const cost = parseFloat(document.getElementById('cost').value);
-    const atr = parseFloat(document.getElementById('atr_val').value) || p * 0.03;
     
-    if (!p || !hi || !lo) return alert('請輸入完整數據');
-    document.getElementById('analysisResult').style.display = 'block';
+    if (!p || !hi || !lo) return alert('數據不完整');
+    document.getElementById('resultArea').style.display = 'block';
 
     const range = hi - lo;
-    const fib0618 = lo + range * 0.618;
-    const fib0786 = lo + range * 0.786;
-    
-    // --- 勝率燈號邏輯 ---
-    let score = 0;
-    if (p > cost) score += 40; // 趨勢過濾
-    if (Math.abs(p - fib0618) / fib0618 < 0.02) score += 40; // 支撐過濾
-    
-    // 停損邏輯：0.786 與 ATR 1.5倍取其嚴
-    const stopLoss = Math.min(fib0786, p - (atr * 1.5));
-    const reward = hi - p;
-    const risk = p - stopLoss;
-    const rr = reward / risk;
-    if (rr > 1.8) score += 20; // 風報比過濾
+    // 將 0.786 設定為計算風險的參考點 (降低虧損用)
+    const stopLossRef = lo + range * 0.786; 
+    const rr = (hi - p) / (p - stopLossRef);
 
-    const scoreColor = score >= 80 ? 'var(--accent-green)' : (score >= 40 ? 'var(--accent-gold)' : 'var(--accent-red)');
-    const entryText = score >= 80 ? "✅ 滿足高勝率組合：建議進場" : (score >= 40 ? "⏳ 支撐確立中：分批試單" : "🚫 風險極大：觀望為宜");
-
-    // --- 風報比說明文字 ---
-    let rrAdvice = rr >= 2.5 ? "潛在獲利極高，具備大賺小賠空間。" : (rr >= 1.5 ? "性價比合理，適合波段持有。" : "獲利空間太窄，不建議冒險。");
-
-    document.getElementById('statusBox').innerHTML = `
-        <div class="score-circle" style="border-color:${scoreColor}; color:${scoreColor}">${score}</div>
-        <div style="font-size:14px; color:${scoreColor}; font-weight:900;">${entryText}</div>
-        <div class="entry-badge" style="background:${scoreColor}; color:#000;">勝率評分系統</div>
-        
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px; text-align:left;">
-            <div style="background:#0b0d11; padding:10px; border-radius:10px; border:1px solid var(--border);">
-                <div style="font-size:10px; color:var(--text-muted);">絕對止損位 (0.786)</div>
-                <div style="font-size:16px; font-weight:700; color:var(--accent-red);">$${stopLoss.toFixed(2)}</div>
-            </div>
-            <div style="background:#0b0d11; padding:10px; border-radius:10px; border:1px solid var(--border);">
-                <div style="font-size:10px; color:var(--text-muted);">預期風報比</div>
-                <div style="font-size:16px; font-weight:700; color:var(--accent-purple);">${rr.toFixed(1)} 倍</div>
-            </div>
-        </div>
-
-        <div class="advice-card" style="border-color:${scoreColor}">
-            <div class="advice-title">💡 策略分析報告</div>
-            <p class="advice-text">
-                本筆交易每承擔 1 元風險，可望換取 <b>${rr.toFixed(1)} 元</b> 的利潤。${rrAdvice}<br>
-                <b>[止損說明]</b>：0.786 位階是多頭最後底線，一旦跌破代表上升波段瓦解，必須無條件止損。
-            </p>
-        </div>
-    `;
-
-    // --- 渲染 Fib 表格 ---
-    const fibRatios = [
-        { r: 0.382, l: "0.382", role: "強勢防護", strat: "跌破轉弱", tag: "tag-exit" },
-        { r: 0.5,   l: "0.500", role: "多空分界", strat: "關鍵觀察", tag: "tag-hold" },
-        { r: 0.618, l: "0.618", role: "發財位", strat: "黃金進場", tag: "tag-entry" },
-        { r: 0.786, l: "0.786", role: "終極防線", strat: "絕對止損", tag: "tag-exit" },
-        { r: 1.618, l: "1.618", role: "終極目標", strat: "獲利出場", tag: "tag-exit" }
+    // 位階定義：包含向上擴展與向下回測
+    const levels = [
+        { r: 1.618, label: "1.618 終極獲利區", type: "sell" },
+        { r: 1.382, label: "1.382 波段壓力位", type: "sell" },
+        { r: 0.786, label: "0.786 高位減碼區", type: "sell" }, // 你的減碼壓力位
+        { r: 0.618, label: "0.618 黃金買點區", type: "buy" },  // 你的高勝率進場
+        { r: 0.500, label: "0.500 多空平衡點", type: "buy" }
     ];
 
     let fibHTML = "";
-    fibRatios.forEach(f => {
-        const val = lo + range * f.r;
-        const isNear = Math.abs(p - val) / p < 0.015;
-        fibHTML += `<tr><td><span style="font-size:10px; color:var(--text-muted)">${f.l}</span><br><b>${f.role}</b><br><span class="strat-tag ${f.tag}">${f.strat}</span></td><td style="font-weight:700;">$${val.toFixed(2)}</td><td style="color:${isNear ? 'var(--accent-green)' : (p > val ? 'var(--accent-red)' : 'var(--text-muted)')}">${isNear ? '🎯' : (p > val ? '▲' : '▼')}</td></tr>`;
+    let activeSignal = "⏳ 觀察中";
+    let signalColor = "var(--accent-gold)";
+
+    levels.sort((a,b) => b.r - a.r).forEach(f => {
+        const val = lo + (range * f.r);
+        const isActive = Math.abs(p - val) / val < 0.02; // 2% 誤差內點亮
+        
+        let rowClass = "";
+        let tag = "";
+
+        if (isActive) {
+            if (f.type === "buy") {
+                rowClass = "active-buy";
+                tag = `<br><span class="target-tag tag-buy">🔴 買點點亮：支撐確認</span>`;
+                activeSignal = "🎯 買點觸發：建議進場";
+                signalColor = "var(--accent-red)";
+            } else {
+                rowClass = "active-sell";
+                tag = `<br><span class="target-tag tag-sell">🟢 賣點點亮：建議減碼</span>`;
+                activeSignal = "🚀 壓力觸及：獲利落袋";
+                signalColor = "var(--accent-green)";
+            }
+        }
+
+        fibHTML += `
+            <tr class="${rowClass}">
+                <td>
+                    <span style="font-size:10px; color:var(--text-muted)">Fib ${f.r.toFixed(3)}</span><br>
+                    <b>${f.label}</b>${tag}
+                </td>
+                <td style="font-weight:700; text-align:right;">$${val.toFixed(2)}</td>
+                <td style="text-align:right;">${p > val ? '▲' : '▼'}</td>
+            </tr>`;
     });
+
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    // --- 法人目標 ---
-    if(cost) {
-        document.getElementById('waveTargets').innerHTML = `
-            <div class="target-item"><div class="target-label">突破點</div><div class="target-val">$${(cost*1.04).toFixed(2)}</div></div>
-            <div class="target-item"><div class="target-label">目標一</div><div class="target-val" style="color:var(--accent-purple)">$${(cost*1.2).toFixed(2)}</div></div>
-            <div class="target-item"><div class="target-label">目標二</div><div class="target-val" style="color:var(--accent-red)">$${(cost*1.4).toFixed(2)}</div></div>`;
-    }
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    // 風報比顏色與文字邏輯
+    let rrText = "❌ 低於 1.2：不划算";
+    let rrColor = "var(--accent-red)";
+    if (rr >= 3.0) { rrText = "💎 3.0 以上：極佳"; rrColor = "var(--accent-green)"; }
+    else if (rr >= 2.0) { rrText = "✨ 2.0 以上：理想"; rrColor = "var(--accent-gold)"; }
+    else if (rr >= 1.5) { rrText = "⚖️ 1.5 - 2.0：合格"; rrColor = "#ccc"; }
+
+    document.getElementById('statusBox').innerHTML = `
+        <div class="score-circle" style="border-color:${signalColor}; color:${signalColor}">${rr >= 2.0 && p > cost ? '90' : '50'}</div>
+        <div style="font-size:18px; font-weight:900; color:${signalColor}">${activeSignal}</div>
+        <div class="rr-report">
+            <div style="font-size:11px; color:var(--accent-gold); font-weight:bold; margin-bottom:8px;">📊 風報比分析 (RR: ${rr.toFixed(2)})</div>
+            <div style="font-size:14px; font-weight:700; color:${rrColor}; margin-bottom:10px;">${rrText}</div>
+            <div style="border-top:1px solid #333; padding-top:8px; font-size:11px;">
+                <div class="rr-item" style="${rr>=2.0?'color:#fff':''}">● 理想數值：2.0 以上</div>
+                <div class="rr-item" style="${rr>=3.0?'color:#fff':''}">● 3.0 以上：極佳</div>
+                <div class="rr-item" style="${rr>=1.5 && rr<2.0?'color:#fff':''}">● 1.5 - 2.0：合格 (穩健)</div>
+                <div class="rr-item" style="color:var(--accent-red)">● 低於 1.2：不划算</div>
+            </div>
+        </div>
+    `;
 }
 </script>
 </body>
