@@ -13,8 +13,8 @@
     --border: #2d323d;
     --accent-gold: #f5c842;
     --accent-purple: #b48eff;
-    --accent-green: #4ade80;
-    --accent-red: #f87171;
+    --accent-green: #4ade80; /* 支撐/買進 */
+    --accent-red: #f87171;   /* 壓力/賣出 */
     --text-main: #f5f5f5;
     --text-muted: #8a8f9d;
   }
@@ -50,8 +50,9 @@
   .report-desc { text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-top: 15px; font-size: 13px; line-height: 1.6; color: var(--text-main); }
   .strat-info { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--accent-gold); font-weight: bold; }
 
-  .row-buy-active { background: rgba(248, 113, 113, 0.15) !important; border-left: 4px solid var(--accent-red) !important; }
-  .row-sell-active { background: rgba(74, 222, 128, 0.15) !important; border-left: 4px solid var(--accent-green) !important; }
+  /* 買綠賣紅：修正背景與邊框顏色 */
+  .row-buy-active { background: rgba(74, 222, 128, 0.15) !important; border-left: 4px solid var(--accent-green) !important; }
+  .row-sell-active { background: rgba(248, 113, 113, 0.15) !important; border-left: 4px solid var(--accent-red) !important; }
 
   .fib-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 13px; }
   .fib-table tr { border-bottom: 1px solid var(--border); }
@@ -64,8 +65,8 @@
   .target-val { font-size: 14px; font-weight: 700; color: var(--accent-gold); }
 
   .strat-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; font-weight: bold; }
-  .tag-entry { background: rgba(248, 113, 113, 0.2); color: var(--accent-red); border: 0.5px solid var(--accent-red); }
-  .tag-exit { background: rgba(74, 222, 128, 0.2); color: var(--accent-green); border: 0.5px solid var(--accent-green); }
+  .tag-entry { background: rgba(74, 222, 128, 0.2); color: var(--accent-green); border: 0.5px solid var(--accent-green); }
+  .tag-exit { background: rgba(248, 113, 113, 0.2); color: var(--accent-red); border: 0.5px solid var(--accent-red); }
   .tag-hold { background: rgba(245,200,66,0.15); color: #f5c842; border: 0.5px solid #f5c842; }
 </style>
 </head>
@@ -99,7 +100,7 @@
   <div class="status-box" id="statusBox"></div>
 
   <div class="card">
-    <div class="card-title">📐 斐波那契 (買紅賣綠)</div>
+    <div class="card-title">📐 斐波那契 (買綠賣紅)</div>
     <table class="fib-table" id="fibTable"></table>
   </div>
 
@@ -146,6 +147,7 @@ function runAnalysis() {
     document.getElementById('analysisResult').style.display = 'block';
     const range = hi - lo;
 
+    // 位階定義：買綠（低位）賣紅（高位）
     const fibRatios = [
         { r: 1.618, l: "末升段", role: "終極目標區", strat: "全數獲利", tag: "tag-exit", type: "sell" },
         { r: 1.382, l: "魚尾段", role: "擴展滿足點", strat: "分批停利", tag: "tag-exit", type: "sell" },
@@ -168,37 +170,37 @@ function runAnalysis() {
         const isNear = Math.abs(p - val) / val < 0.02;
         let rowClass = "";
         if (isNear) {
+            // 修正：買綠賣紅的視覺點亮
             rowClass = f.type === "buy" ? "row-buy-active" : "row-sell-active";
-            mainSignal = f.type === "buy" ? "🎯 法人護盤點點亮" : "🚀 目標滿足點點亮";
-            signalColor = f.type === "buy" ? "var(--accent-red)" : "var(--accent-green)";
+            mainSignal = f.type === "buy" ? "🎯 進入黃金買點區" : "🚀 到達目標壓力區";
+            signalColor = f.type === "buy" ? "var(--accent-green)" : "var(--accent-red)";
             hitAny = true;
         }
-        fibHTML += `<tr class="${rowClass}"><td><span style="font-size:10px; color:var(--text-muted)">${f.l} (${f.r})</span><br><b>${f.role}</b><br><span class="strat-tag ${f.tag}">${f.strat}</span></td><td class="price-text">$${val.toFixed(2)}</td><td style="text-align:right; font-size:11px; color:${isNear ? 'inherit' : (p > val ? 'var(--accent-red)' : 'var(--text-muted)')}">${isNear ? '🎯 點亮' : (p > val ? '▲ 支撐' : '▼ 壓力')}</td></tr>`;
+        fibHTML += `<tr class="${rowClass}"><td><span style="font-size:10px; color:var(--text-muted)">${f.l} (${f.r})</span><br><b>${f.role}</b><br><span class="strat-tag ${f.tag}">${f.strat}</span></td><td class="price-text">$${val.toFixed(2)}</td><td style="text-align:right; font-size:11px; color:${isNear ? 'inherit' : (p > val ? 'var(--accent-red)' : 'var(--accent-green)')}">${isNear ? '🎯 點亮' : (p > val ? '▲ 支撐' : '▼ 壓力')}</td></tr>`;
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    // --- 嚴格評分標準修正 ---
-    let score = 40; // 基礎分調降為 40
+    // --- 嚴格評分標準 ---
+    let score = 40; 
     let stratText = "";
-    const isStrongZone = p > (lo + range * 0.618); // 必須站上 0.618 才算強勢
+    const isStrongZone = p > (lo + range * 0.618);
     const isAboveMid = p > (lo + range * 0.5);
-    const isProfitable = cost && p > (cost * 1.04); // 獲利需脫離成本 4% 
-    const isBreakHigh = p > hi; // 突破前高
+    const isProfitable = cost && p > (cost * 1.04);
+    const isBreakHigh = p > hi;
 
     if (isStrongZone) { score += 20; } 
     if (isProfitable) { score += 20; }
     if (isBreakHigh) { score += 20; }
     score = Math.min(100, score);
 
-    // 根據嚴格評分給予進出場建議
     if (score >= 90) {
-        stratText = "💎 極致格局：股價已突破前高且獲利穩定，進入魚尾噴發段，建議持股續抱至 1.382 以上。";
+        stratText = "💎 極致格局：突破前高且獲利穩健，建議賣紅不追高，分批落袋。";
     } else if (score >= 70) {
-        stratText = "✨ 穩健格局：站穩主升段位階且脫離成本區，趨勢向上明朗，回測關鍵位階可考慮加碼。";
+        stratText = "✨ 穩健格局：站穩 0.618 主升段，多頭趨勢明顯，未達壓力前續抱。";
     } else if (score >= 50) {
-        stratText = "⏳ 觀察格局：股價在多空分界線掙扎，尚未脫離成本風險區，建議觀望或僅小量佈局。";
+        stratText = "⏳ 觀察格局：股價於 0.5 附近徘徊，買綠佈局應守住 0.382 支撐位。";
     } else {
-        stratText = "⚠️ 警訊格局：股價處於 0.5 以下弱勢區或成本保護不足，應嚴守 0 位階止損，避免套牢。";
+        stratText = "⚠️ 警訊格局：弱勢整理，僅適合在綠色支撐區嘗試極小量防守性佈局。";
     }
 
     document.getElementById('statusBox').innerHTML = `
@@ -207,7 +209,7 @@ function runAnalysis() {
         <div class="report-desc">
             目前股價位於「${isAboveMid ? '多方區間' : '空方整理'}」之 ${isStrongZone ? '強勢位' : '弱勢位'}。
             ${hitAny ? '偵測到關鍵位階訊號，請參考表格內點亮之策略建議。' : '目前尚未觸及核心位階點亮。'}
-            <div class="strat-info">📢 進出場策略建議（嚴格版）：<br>${stratText}</div>
+            <div class="strat-info">📢 進出場策略建議（買綠賣紅）：<br>${stratText}</div>
         </div>`;
 
     if (cost) {
