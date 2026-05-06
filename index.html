@@ -50,7 +50,6 @@
   .report-desc { text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-top: 15px; font-size: 13px; line-height: 1.6; color: var(--text-main); }
   .strat-info { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--accent-gold); font-weight: bold; }
 
-  /* 買綠賣紅：修正背景與邊框顏色 */
   .row-buy-active { background: rgba(74, 222, 128, 0.15) !important; border-left: 4px solid var(--accent-green) !important; }
   .row-sell-active { background: rgba(248, 113, 113, 0.15) !important; border-left: 4px solid var(--accent-red) !important; }
 
@@ -147,13 +146,14 @@ function runAnalysis() {
     document.getElementById('analysisResult').style.display = 'block';
     const range = hi - lo;
 
-    // 位階定義：買綠（低位）賣紅（高位）
+    // 位階定義：新增 0.667 關鍵位
     const fibRatios = [
         { r: 1.618, l: "末升段", role: "終極目標區", strat: "全數獲利", tag: "tag-exit", type: "sell" },
         { r: 1.382, l: "魚尾段", role: "擴展滿足點", strat: "分批停利", tag: "tag-exit", type: "sell" },
         { r: 1.272, l: "噴發位", role: "初步擴展區", strat: "壓力觀察", tag: "tag-exit", type: "sell" },
         { r: 1.0,   l: "前高點", role: "關鍵壓力位", strat: "高位減碼", tag: "tag-exit", type: "sell" },
         { r: 0.786, l: "轉折位", role: "魚身轉魚尾", strat: "高位減碼", tag: "tag-exit", type: "sell" },
+        { r: 0.667, l: "防禦位", role: "2/3最後防線", strat: "破位止損", tag: "tag-entry", type: "buy" },
         { r: 0.618, l: "主升段", role: "法人護盤區", strat: "波段買點", tag: "tag-entry", type: "buy" },
         { r: 0.5,   l: "魚頭段", role: "多空起漲點", strat: "初步佈局", tag: "tag-entry", type: "buy" },
         { r: 0.382, l: "強勢位", role: "回測支撐點", strat: "分批佈局", tag: "tag-entry", type: "buy" },
@@ -170,7 +170,6 @@ function runAnalysis() {
         const isNear = Math.abs(p - val) / val < 0.02;
         let rowClass = "";
         if (isNear) {
-            // 修正：買綠賣紅的視覺點亮
             rowClass = f.type === "buy" ? "row-buy-active" : "row-sell-active";
             mainSignal = f.type === "buy" ? "🎯 進入黃金買點區" : "🚀 到達目標壓力區";
             signalColor = f.type === "buy" ? "var(--accent-green)" : "var(--accent-red)";
@@ -180,7 +179,6 @@ function runAnalysis() {
     });
     document.getElementById('fibTable').innerHTML = fibHTML;
 
-    // --- 嚴格評分標準 ---
     let score = 40; 
     let stratText = "";
     const isStrongZone = p > (lo + range * 0.618);
