@@ -118,7 +118,7 @@ async function fetchFinMindData() {
     const btn = document.getElementById('btnFetch');
     btn.textContent = '🚀 數據同步中...';
     const endDate = new Date().toISOString().split('T')[0];
-    const startDate = new Date(new Date().setDate(new Date().getDate() - 90)).toISOString().split('T')[0];
+    const startDate = new Date(new Date().setDate(new Date().getDate() - 60)).toISOString().split('T')[0];
 
     try {
         const url = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${ticker}&start_date=${startDate}&end_date=${endDate}&token=${FINMIND_TOKEN}`;
