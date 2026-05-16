@@ -207,7 +207,7 @@ function runAnalysis() {
         <div class="report-desc">
             目前股價位於「${isAboveMid ? '多方區間' : '空方整理'}」之 ${isStrongZone ? '強勢位' : '弱勢位'}。
             ${hitAny ? '偵測到關鍵位階訊號，請參考表格內點亮之策略建議。' : '目前尚未觸及核心位階點亮。'}
-            <div class="strat-info">📢 進出場策略建議（買綠賣紅）：<br>${stratText}</div>
+            <div class="strat-info">📢 進出場策略建議（買綠賣紅，空手者0.5位階進場，追高者回檔後應守住0.618）：<br>${stratText}</div>
         </div>`;
 
     if (cost) {
